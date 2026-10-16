@@ -7,11 +7,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
 
+import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.dto.UserResponse;
 import com.example.spring_todolist.dto.UserUpdateRequest;
 import com.example.spring_todolist.exception.GlobalExceptionHandler;
@@ -23,12 +25,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Teste le cablage HTTP (routes, codes, JSON) et la garde "pas d'auto-
@@ -46,6 +51,7 @@ class UserControllerTest {
 
     private UserController userController;
     private MockMvc mockMvc;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
@@ -68,6 +74,31 @@ class UserControllerTest {
         mockMvc.perform(get("/api/users/me").principal(authenticationFor("jdupont", "ROLE_USER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("jdupont"));
+    }
+
+    @Test
+    void create_shouldDelegateToServiceRegister() throws Exception {
+        UserCreateRequest request = new UserCreateRequest(
+                "jdupont", "secret123", "Jean", "Dupont", "jean@example.com");
+        when(userService.register(request)).thenReturn(
+                new UserResponse(1, "jdupont", "Jean", "Dupont", "jean@example.com", List.of("ROLE_USER")));
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.username").value("jdupont"))
+                .andExpect(jsonPath("$.roles[0]").value("ROLE_USER"));
+    }
+
+    @Test
+    void create_withBlankUsername_shouldReturn400() throws Exception {
+        UserCreateRequest invalid = new UserCreateRequest(" ", "secret123", null, null, "jean@example.com");
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

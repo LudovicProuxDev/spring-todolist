@@ -3,6 +3,7 @@ package com.example.spring_todolist.controller;
 import java.util.List;
 
 import com.example.spring_todolist.dto.ApiError;
+import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.dto.UserResponse;
 import com.example.spring_todolist.dto.UserUpdateRequest;
 import com.example.spring_todolist.service.UserService;
@@ -27,6 +28,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,6 +45,27 @@ public class UserController {
     private static final String ADMIN_ROLE = "ROLE_ADMIN";
 
     private final UserService userService;
+
+    @Operation(summary = "Creer un utilisateur", description = "Reserve aux administrateurs. "
+            + "Le compte cree recoit toujours ROLE_USER par defaut, comme a l'inscription publique "
+            + "(/api/auth/register) : cet endpoint ne permet pas non plus d'attribuer un role a la creation.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Utilisateur cree"),
+        @ApiResponse(responseCode = "400", description = "Payload invalide",
+                content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "401", description = "Authentification requise",
+                content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Reserve aux administrateurs",
+                content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "409", description = "Nom d'utilisateur ou email deja pris",
+                content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserResponse create(@Valid @RequestBody UserCreateRequest request) {
+        return userService.register(request);
+    }
 
     @Operation(summary = "Lister tous les utilisateurs", description = "Reserve aux administrateurs.")
     @ApiResponses({

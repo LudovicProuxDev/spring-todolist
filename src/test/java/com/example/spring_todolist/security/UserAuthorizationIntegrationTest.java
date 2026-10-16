@@ -133,6 +133,34 @@ class UserAuthorizationIntegrationTest {
     }
 
     @Test
+    void user_cannotCreateUserViaUsersEndpoint() {
+        String token = registerAndLogin("creator-" + uniqueSuffix());
+        UserCreateRequest newUser = new UserCreateRequest(
+                "created-" + uniqueSuffix(), "secret123", "Jean", "Dupont", "created-" + uniqueSuffix() + "@example.com");
+
+        ResponseEntity<ApiError> response = restTemplate.exchange(
+                "/api/users", HttpMethod.POST, new HttpEntity<>(newUser, authHeaders(token)), ApiError.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void admin_canCreateUser_whoStillOnlyGetsDefaultRole() {
+        String adminToken = createAdminAndLogin("creator-admin-" + uniqueSuffix());
+        String newUsername = "created-" + uniqueSuffix();
+        UserCreateRequest newUser = new UserCreateRequest(
+                newUsername, "secret123", "Jean", "Dupont", newUsername + "@example.com");
+
+        ResponseEntity<UserResponse> response = restTemplate.exchange(
+                "/api/users", HttpMethod.POST, new HttpEntity<>(newUser, authHeaders(adminToken)), UserResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody().username()).isEqualTo(newUsername);
+        // Meme cree par un admin, le compte ne recoit que le role par defaut.
+        assertThat(response.getBody().roles()).containsExactly("ROLE_USER");
+    }
+
+    @Test
     void user_cannotSelfPromoteToAdminViaUpdate() {
         String token = registerAndLogin("escalation-" + uniqueSuffix());
         Integer id = currentUserId(token);
