@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Installer le JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -46,12 +46,32 @@ jobs:
     name: Tests
     needs: build
     runs-on: ubuntu-latest
+    # Le demarrage du contexte Spring (contextLoads) a besoin d'une
+    # vraie base pour configurer le DataSource JPA/Hibernate.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: todolist
+          POSTGRES_USER: todolist
+          POSTGRES_PASSWORD: todolist
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U todolist -d todolist"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/todolist
+      SPRING_DATASOURCE_USERNAME: todolist
+      SPRING_DATASOURCE_PASSWORD: todolist
     steps:
       - name: Recuperer le code
         uses: actions/checkout@v4
 
       - name: Installer le JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
