@@ -23,7 +23,7 @@ class UserTest {
             User user = User.builder()
                     .id(1)
                     .username("jdupont")
-                    .roles(List.of("ROLE_USER", "ROLE_ADMIN"))
+                    .roles(List.of(Role.ROLE_USER, Role.ROLE_ADMIN))
                     .password("hashed-password")
                     .plainPassword("clear-password")
                     .lastname("Dupont")
@@ -33,7 +33,7 @@ class UserTest {
 
             assertThat(user.getId()).isEqualTo(1);
             assertThat(user.getUsername()).isEqualTo("jdupont");
-            assertThat(user.getRoles()).containsExactly("ROLE_USER", "ROLE_ADMIN");
+            assertThat(user.getRoles()).containsExactly(Role.ROLE_USER, Role.ROLE_ADMIN);
             assertThat(user.getPassword()).isEqualTo("hashed-password");
             assertThat(user.getPlainPassword()).isEqualTo("clear-password");
             assertThat(user.getLastname()).isEqualTo("Dupont");

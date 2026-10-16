@@ -2,6 +2,8 @@ package com.example.spring_todolist.dto;
 
 import java.util.List;
 
+import com.example.spring_todolist.entity.Role;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.constraints.Email;
@@ -11,6 +13,8 @@ import jakarta.validation.constraints.Size;
  * Mise a jour partielle : un champ null signifie "ne pas modifier".
  * "roles" ne peut etre renseigne que par un administrateur - verifie par
  * UserController, qui rejette (403) toute tentative venant d'un non-admin.
+ * Type Role (enum) plutot que String : une valeur hors vocabulaire connu
+ * est rejetee au parsing JSON (400), avant meme d'atteindre le controller.
  */
 public record UserUpdateRequest(
 
@@ -33,5 +37,5 @@ public record UserUpdateRequest(
         @Schema(description = "Nouveaux roles - reserve a un administrateur, "
                 + "sinon la requete est rejetee (optionnel, null = inchange)",
                 example = "[\"ROLE_USER\"]")
-        List<String> roles) {
+        List<Role> roles) {
 }

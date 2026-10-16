@@ -9,6 +9,7 @@ import com.example.spring_todolist.dto.AuthResponse;
 import com.example.spring_todolist.dto.LoginRequest;
 import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.dto.UserResponse;
+import com.example.spring_todolist.entity.Role;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +53,7 @@ class SecurityIntegrationTest {
         assertThat(registerResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(registerResponse.getBody()).isNotNull();
         assertThat(registerResponse.getBody().username()).isEqualTo(username);
-        assertThat(registerResponse.getBody().roles()).containsExactly("ROLE_USER");
+        assertThat(registerResponse.getBody().roles()).containsExactly(Role.ROLE_USER);
 
         ResponseEntity<AuthResponse> loginResponse = restTemplate.postForEntity(
                 "/api/auth/login", new LoginRequest(username, "secret123"), AuthResponse.class);

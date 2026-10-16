@@ -7,6 +7,7 @@ import java.util.List;
 import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.dto.UserResponse;
 import com.example.spring_todolist.dto.UserUpdateRequest;
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.entity.User;
 
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,7 @@ class UserMapperTest {
                 .lastname("Dupont")
                 .email("ancien@example.com")
                 .password("hashed")
-                .roles(List.of("ROLE_USER"))
+                .roles(List.of(Role.ROLE_USER))
                 .build();
         UserUpdateRequest request = new UserUpdateRequest(null, null, "nouveau@example.com", null, null);
 
@@ -61,7 +62,7 @@ class UserMapperTest {
         assertThat(existing.getEmail()).isEqualTo("nouveau@example.com");
         assertThat(existing.getFirstname()).isEqualTo("Jean");
         assertThat(existing.getLastname()).isEqualTo("Dupont");
-        assertThat(existing.getRoles()).containsExactly("ROLE_USER");
+        assertThat(existing.getRoles()).containsExactly(Role.ROLE_USER);
         assertThat(existing.getPlainPassword()).isNull();
     }
 
@@ -79,12 +80,12 @@ class UserMapperTest {
 
     @Test
     void updateEntity_withRoles_shouldReplaceRoles() {
-        User existing = User.builder().id(1).username("jdupont").roles(List.of("ROLE_USER")).build();
-        UserUpdateRequest request = new UserUpdateRequest(null, null, null, null, List.of("ROLE_USER", "ROLE_ADMIN"));
+        User existing = User.builder().id(1).username("jdupont").roles(List.of(Role.ROLE_USER)).build();
+        UserUpdateRequest request = new UserUpdateRequest(null, null, null, null, List.of(Role.ROLE_USER, Role.ROLE_ADMIN));
 
         mapper.updateEntity(request, existing);
 
-        assertThat(existing.getRoles()).containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN");
+        assertThat(existing.getRoles()).containsExactlyInAnyOrder(Role.ROLE_USER, Role.ROLE_ADMIN);
     }
 
     @Test
@@ -96,13 +97,13 @@ class UserMapperTest {
                 .lastname("Dupont")
                 .email("jean.dupont@example.com")
                 .password("hashed")
-                .roles(List.of("ROLE_USER"))
+                .roles(List.of(Role.ROLE_USER))
                 .build();
 
         UserResponse response = mapper.toResponse(user);
 
         assertThat(response).isEqualTo(new UserResponse(
-                1, "jdupont", "Jean", "Dupont", "jean.dupont@example.com", List.of("ROLE_USER")));
+                1, "jdupont", "Jean", "Dupont", "jean.dupont@example.com", List.of(Role.ROLE_USER)));
     }
 
     @Test

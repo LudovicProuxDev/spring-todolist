@@ -2,6 +2,8 @@ package com.example.spring_todolist.dto;
 
 import java.util.List;
 
+import com.example.spring_todolist.entity.Role;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 // Ne contient jamais password ni plainPassword.
@@ -23,5 +25,5 @@ public record UserResponse(
         String email,
 
         @Schema(description = "Roles de l'utilisateur", example = "[\"ROLE_USER\"]")
-        List<String> roles) {
+        List<Role> roles) {
 }

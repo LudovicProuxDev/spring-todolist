@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.entity.User;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
 import com.example.spring_todolist.service.UserService;
@@ -32,7 +33,7 @@ class CustomUserDetailsServiceTest {
                 .id(1)
                 .username("jdupont")
                 .password("hashed")
-                .roles(List.of("ROLE_USER", "ROLE_ADMIN"))
+                .roles(List.of(Role.ROLE_USER, Role.ROLE_ADMIN))
                 .build();
         when(userService.findEntityByUsername("jdupont")).thenReturn(user);
 

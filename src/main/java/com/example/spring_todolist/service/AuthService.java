@@ -1,7 +1,10 @@
 package com.example.spring_todolist.service;
 
+import java.util.List;
+
 import com.example.spring_todolist.dto.AuthResponse;
 import com.example.spring_todolist.dto.LoginRequest;
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.entity.User;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
 import com.example.spring_todolist.security.JwtService;
@@ -38,7 +41,10 @@ public class AuthService {
             throw new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE);
         }
 
-        String token = jwtService.generateToken(user.getUsername(), user.getRoles());
+        // JwtService est une brique d'infrastructure generique (pas de dependance
+        // au domaine) : elle manipule des roles en String, pas l'enum Role.
+        List<String> roleNames = user.getRoles().stream().map(Role::name).toList();
+        String token = jwtService.generateToken(user.getUsername(), roleNames);
         return new AuthResponse(token);
     }
 }

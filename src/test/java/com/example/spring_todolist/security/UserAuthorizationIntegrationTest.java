@@ -11,6 +11,7 @@ import com.example.spring_todolist.dto.LoginRequest;
 import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.dto.UserResponse;
 import com.example.spring_todolist.dto.UserUpdateRequest;
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.entity.User;
 import com.example.spring_todolist.repository.UserRepository;
 
@@ -64,7 +65,7 @@ class UserAuthorizationIntegrationTest {
         User admin = User.builder()
                 .username(username)
                 .password(passwordEncoder.encode("secret123"))
-                .roles(List.of("ROLE_USER", "ROLE_ADMIN"))
+                .roles(List.of(Role.ROLE_USER, Role.ROLE_ADMIN))
                 .build();
         userRepository.save(admin);
         ResponseEntity<AuthResponse> login = restTemplate.postForEntity(
@@ -157,7 +158,7 @@ class UserAuthorizationIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody().username()).isEqualTo(newUsername);
         // Meme cree par un admin, le compte ne recoit que le role par defaut.
-        assertThat(response.getBody().roles()).containsExactly("ROLE_USER");
+        assertThat(response.getBody().roles()).containsExactly(Role.ROLE_USER);
     }
 
     @Test
@@ -167,7 +168,7 @@ class UserAuthorizationIntegrationTest {
 
         ResponseEntity<ApiError> response = restTemplate.exchange(
                 "/api/users/" + id, HttpMethod.PUT,
-                new HttpEntity<>(new UserUpdateRequest(null, null, null, null, List.of("ROLE_ADMIN")), authHeaders(token)),
+                new HttpEntity<>(new UserUpdateRequest(null, null, null, null, List.of(Role.ROLE_ADMIN)), authHeaders(token)),
                 ApiError.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
@@ -189,10 +190,10 @@ class UserAuthorizationIntegrationTest {
 
         ResponseEntity<UserResponse> putResponse = restTemplate.exchange(
                 "/api/users/" + targetId, HttpMethod.PUT,
-                new HttpEntity<>(new UserUpdateRequest(null, null, null, null, List.of("ROLE_USER", "ROLE_ADMIN")), authHeaders(adminToken)),
+                new HttpEntity<>(new UserUpdateRequest(null, null, null, null, List.of(Role.ROLE_USER, Role.ROLE_ADMIN)), authHeaders(adminToken)),
                 UserResponse.class);
         assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(putResponse.getBody().roles()).contains("ROLE_ADMIN");
+        assertThat(putResponse.getBody().roles()).contains(Role.ROLE_ADMIN);
 
         ResponseEntity<Void> deleteResponse = restTemplate.exchange(
                 "/api/users/" + targetId, HttpMethod.DELETE, new HttpEntity<>(authHeaders(adminToken)), Void.class);

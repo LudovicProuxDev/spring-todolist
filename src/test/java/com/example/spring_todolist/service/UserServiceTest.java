@@ -13,6 +13,7 @@ import java.util.Optional;
 import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.dto.UserResponse;
 import com.example.spring_todolist.dto.UserUpdateRequest;
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.entity.User;
 import com.example.spring_todolist.exception.DuplicateResourceException;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
@@ -57,7 +58,7 @@ class UserServiceTest {
         UserResponse response = userService.register(request);
 
         assertThat(response.username()).isEqualTo("jdupont");
-        assertThat(response.roles()).containsExactly("ROLE_USER");
+        assertThat(response.roles()).containsExactly(Role.ROLE_USER);
 
         var savedUserCaptor = org.mockito.ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(savedUserCaptor.capture());
@@ -178,7 +179,7 @@ class UserServiceTest {
 
     @Test
     void findByUsername_whenExists_shouldReturnMappedResponse() {
-        User user = User.builder().id(1).username("jdupont").roles(List.of("ROLE_USER")).build();
+        User user = User.builder().id(1).username("jdupont").roles(List.of(Role.ROLE_USER)).build();
         when(userRepository.findByUsername("jdupont")).thenReturn(Optional.of(user));
 
         UserResponse response = userService.findByUsername("jdupont");

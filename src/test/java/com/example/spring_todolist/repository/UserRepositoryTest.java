@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.entity.User;
 
 import org.junit.jupiter.api.Test;
@@ -66,13 +67,13 @@ class UserRepositoryTest {
         User saved = userRepository.save(User.builder()
                 .username("jdupont")
                 .password("hashed")
-                .roles(List.of("ROLE_USER", "ROLE_ADMIN"))
+                .roles(List.of(Role.ROLE_USER, Role.ROLE_ADMIN))
                 .build());
         entityManager.flush();
         entityManager.clear();
 
         User reloaded = userRepository.findById(saved.getId()).orElseThrow();
 
-        assertThat(reloaded.getRoles()).containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN");
+        assertThat(reloaded.getRoles()).containsExactlyInAnyOrder(Role.ROLE_USER, Role.ROLE_ADMIN);
     }
 }

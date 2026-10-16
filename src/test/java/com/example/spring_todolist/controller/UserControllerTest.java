@@ -16,6 +16,7 @@ import java.util.List;
 import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.dto.UserResponse;
 import com.example.spring_todolist.dto.UserUpdateRequest;
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.exception.GlobalExceptionHandler;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
 import com.example.spring_todolist.service.UserService;
@@ -69,7 +70,7 @@ class UserControllerTest {
     @Test
     void me_shouldReturnAuthenticatedUsersProfile() throws Exception {
         when(userService.findByUsername("jdupont"))
-                .thenReturn(new UserResponse(1, "jdupont", "Jean", "Dupont", "jean@example.com", List.of("ROLE_USER")));
+                .thenReturn(new UserResponse(1, "jdupont", "Jean", "Dupont", "jean@example.com", List.of(Role.ROLE_USER)));
 
         mockMvc.perform(get("/api/users/me").principal(authenticationFor("jdupont", "ROLE_USER")))
                 .andExpect(status().isOk())
@@ -81,7 +82,7 @@ class UserControllerTest {
         UserCreateRequest request = new UserCreateRequest(
                 "jdupont", "secret123", "Jean", "Dupont", "jean@example.com");
         when(userService.register(request)).thenReturn(
-                new UserResponse(1, "jdupont", "Jean", "Dupont", "jean@example.com", List.of("ROLE_USER")));
+                new UserResponse(1, "jdupont", "Jean", "Dupont", "jean@example.com", List.of(Role.ROLE_USER)));
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -104,7 +105,7 @@ class UserControllerTest {
     @Test
     void findAll_shouldDelegateToService() throws Exception {
         when(userService.findAll()).thenReturn(List.of(
-                new UserResponse(1, "jdupont", null, null, null, List.of("ROLE_USER"))));
+                new UserResponse(1, "jdupont", null, null, null, List.of(Role.ROLE_USER))));
 
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
@@ -123,7 +124,7 @@ class UserControllerTest {
     void update_withoutRoles_shouldDelegateToServiceRegardlessOfCaller() {
         UserUpdateRequest request = new UserUpdateRequest("Jean", null, null, null, null);
         when(userService.update(eq(1), eq(request)))
-                .thenReturn(new UserResponse(1, "jdupont", "Jean", null, null, List.of("ROLE_USER")));
+                .thenReturn(new UserResponse(1, "jdupont", "Jean", null, null, List.of(Role.ROLE_USER)));
 
         UserResponse response = userController.update(1, request, authenticationFor("jdupont", "ROLE_USER"));
 
@@ -133,7 +134,7 @@ class UserControllerTest {
 
     @Test
     void update_withRoles_byNonAdmin_shouldThrowAccessDenied() {
-        UserUpdateRequest request = new UserUpdateRequest(null, null, null, null, List.of("ROLE_ADMIN"));
+        UserUpdateRequest request = new UserUpdateRequest(null, null, null, null, List.of(Role.ROLE_ADMIN));
 
         assertThatThrownBy(() -> userController.update(1, request, authenticationFor("jdupont", "ROLE_USER")))
                 .isInstanceOf(AccessDeniedException.class);
@@ -141,14 +142,14 @@ class UserControllerTest {
 
     @Test
     void update_withRoles_byAdmin_shouldDelegateToService() {
-        UserUpdateRequest request = new UserUpdateRequest(null, null, null, null, List.of("ROLE_ADMIN"));
+        UserUpdateRequest request = new UserUpdateRequest(null, null, null, null, List.of(Role.ROLE_ADMIN));
         when(userService.update(eq(1), eq(request)))
-                .thenReturn(new UserResponse(1, "jdupont", null, null, null, List.of("ROLE_ADMIN")));
+                .thenReturn(new UserResponse(1, "jdupont", null, null, null, List.of(Role.ROLE_ADMIN)));
 
         UserResponse response =
                 userController.update(1, request, authenticationFor("admin", "ROLE_USER", "ROLE_ADMIN"));
 
-        assertThat(response.roles()).containsExactly("ROLE_ADMIN");
+        assertThat(response.roles()).containsExactly(Role.ROLE_ADMIN);
     }
 
     @Test

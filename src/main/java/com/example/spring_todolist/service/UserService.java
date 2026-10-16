@@ -5,6 +5,7 @@ import java.util.List;
 import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.dto.UserResponse;
 import com.example.spring_todolist.dto.UserUpdateRequest;
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.entity.User;
 import com.example.spring_todolist.exception.DuplicateResourceException;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
@@ -22,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class UserService {
 
-    private static final String DEFAULT_ROLE = "ROLE_USER";
+    private static final Role DEFAULT_ROLE = Role.ROLE_USER;
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;

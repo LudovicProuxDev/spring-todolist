@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.example.spring_todolist.dto.AuthResponse;
 import com.example.spring_todolist.dto.LoginRequest;
+import com.example.spring_todolist.entity.Role;
 import com.example.spring_todolist.entity.User;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
 import com.example.spring_todolist.security.JwtService;
@@ -41,7 +42,7 @@ class AuthServiceTest {
 
     @Test
     void login_withValidCredentials_shouldReturnToken() {
-        User user = User.builder().username("jdupont").password("hashed").roles(List.of("ROLE_USER")).build();
+        User user = User.builder().username("jdupont").password("hashed").roles(List.of(Role.ROLE_USER)).build();
         when(userService.findEntityByUsername("jdupont")).thenReturn(user);
         when(passwordEncoder.matches("secret123", "hashed")).thenReturn(true);
         when(jwtService.generateToken("jdupont", List.of("ROLE_USER"))).thenReturn("un-jeton");
