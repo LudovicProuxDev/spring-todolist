@@ -25,8 +25,10 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-// "user" est un mot reserve en PostgreSQL : on mappe la table sur "users".
-@Table(name = "users")
+// "user" est un mot reserve en PostgreSQL (CURRENT_USER) : les backticks forcent
+// Hibernate a toujours echapper l'identifiant ("user" entre guillemets doubles)
+// dans le SQL genere, sinon la creation de table/les requetes echouent.
+@Table(name = "`user`")
 @Getter
 @Setter
 @NoArgsConstructor
