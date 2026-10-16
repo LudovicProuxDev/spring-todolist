@@ -1,0 +1,31 @@
+# Artefacts de build
+build/
+.gradle/
+out/
+bin/
+
+# IDE
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+*.iml
+*.iws
+*.ipr
+
+# Git & docs
+.git/
+.gitignore
+.gitattributes
+HELP.md
+README.md
+
+# Docker
+Dockerfile
+.dockerignore
+compose.yaml
+docker-compose.yml
+
+# Artefacts WSL/Windows
+*:Zone.Identifier
