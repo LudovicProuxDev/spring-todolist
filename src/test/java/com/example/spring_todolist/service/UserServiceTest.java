@@ -175,4 +175,22 @@ class UserServiceTest {
 
         assertThat(found).isEqualTo(user);
     }
+
+    @Test
+    void findByUsername_whenExists_shouldReturnMappedResponse() {
+        User user = User.builder().id(1).username("jdupont").roles(List.of("ROLE_USER")).build();
+        when(userRepository.findByUsername("jdupont")).thenReturn(Optional.of(user));
+
+        UserResponse response = userService.findByUsername("jdupont");
+
+        assertThat(response.username()).isEqualTo("jdupont");
+    }
+
+    @Test
+    void findByUsername_whenMissing_shouldThrowResourceNotFoundException() {
+        when(userRepository.findByUsername("inconnu")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.findByUsername("inconnu"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
 }

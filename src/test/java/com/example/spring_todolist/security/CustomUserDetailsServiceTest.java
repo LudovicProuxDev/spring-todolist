@@ -29,6 +29,7 @@ class CustomUserDetailsServiceTest {
     void loadUserByUsername_whenExists_shouldReturnUserDetailsWithAuthorities() {
         customUserDetailsService = new CustomUserDetailsService(userService);
         User user = User.builder()
+                .id(1)
                 .username("jdupont")
                 .password("hashed")
                 .roles(List.of("ROLE_USER", "ROLE_ADMIN"))
@@ -42,6 +43,10 @@ class CustomUserDetailsServiceTest {
         assertThat(userDetails.getAuthorities())
                 .extracting(Object::toString)
                 .containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN");
+        // L'id est necessaire pour les regles @PreAuthorize "admin ou soi-meme"
+        // (authentication.principal.id) sur UserController.
+        assertThat(userDetails).isInstanceOf(AppUserDetails.class);
+        assertThat(((AppUserDetails) userDetails).getId()).isEqualTo(1);
     }
 
     @Test

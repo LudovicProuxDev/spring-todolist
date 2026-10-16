@@ -69,12 +69,17 @@ public class UserService {
     }
 
     /**
-     * Utilise par la couche authentification (a venir) pour charger un
-     * utilisateur avec son mot de passe hache et ses roles.
+     * Utilise par la couche authentification pour charger un utilisateur
+     * avec son mot de passe hache et ses roles.
      */
     public User findEntityByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable : username=" + username));
+    }
+
+    /** Utilise par GET /api/users/me : le profil de l'utilisateur authentifie. */
+    public UserResponse findByUsername(String username) {
+        return userMapper.toResponse(findEntityByUsername(username));
     }
 
     private User getOrThrow(Integer id) {

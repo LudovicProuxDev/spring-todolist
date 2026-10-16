@@ -27,7 +27,8 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("Utilisateur introuvable : " + username, e);
         }
 
-        return new org.springframework.security.core.userdetails.User(
+        return new AppUserDetails(
+                user.getId(),
                 user.getUsername(),
                 user.getPassword(),
                 user.getRoles().stream().map(SimpleGrantedAuthority::new).toList());

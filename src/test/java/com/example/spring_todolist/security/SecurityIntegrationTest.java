@@ -110,12 +110,21 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    void openRoute_withoutToken_shouldReturnNotFoundRatherThanUnauthorized() {
-        // /api/categories est permitAll : l'absence d'un CategoryController doit
-        // se traduire par un 404 "route inconnue", pas par un 401 (ce qui
-        // arriverait si le forward interne Spring Boot vers /error etait
-        // lui-meme bloque par Security).
+    void openRoute_withoutToken_shouldNotBeUnauthorized() {
+        // /api/categories est permitAll : meme sans jeton, la requete doit
+        // atteindre CategoryController (200), pas etre bloquee par Security.
         ResponseEntity<String> response = restTemplate.getForEntity("/api/categories", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void unmappedRouteUnderOpenPrefix_withoutToken_shouldReturnNotFoundRatherThanUnauthorized() {
+        // Une route non mappee sous un prefixe permitAll doit se traduire par
+        // un 404 "route inconnue", pas par un 401 (ce qui arriverait si le
+        // forward interne Spring Boot vers /error etait lui-meme bloque par
+        // Security).
+        ResponseEntity<String> response = restTemplate.getForEntity("/api/categories/1/sous-route-inexistante", String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
