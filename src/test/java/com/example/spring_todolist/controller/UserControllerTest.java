@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -90,6 +91,19 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.username").value("jdupont"))
                 .andExpect(jsonPath("$.roles[0]").value("ROLE_USER"));
+    }
+
+    @Test
+    void update_withUnknownRoleValue_shouldReturn400WithApiErrorShape() throws Exception {
+        // Corps illisible (valeur hors enum Role) : doit renvoyer le meme format
+        // ApiError que les autres 400, pas la page d'erreur par defaut de Spring Boot.
+        mockMvc.perform(put("/api/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roles\":[\"TRUC_AU_HASARD\"]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.error").doesNotExist());
     }
 
     @Test

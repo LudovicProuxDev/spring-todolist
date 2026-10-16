@@ -6,6 +6,7 @@ import com.example.spring_todolist.dto.ApiError;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -36,6 +37,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new ApiError(HttpStatus.UNAUTHORIZED.value(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        // JSON malforme ou valeur hors vocabulaire enum (ex. "roles":["TRUC_AU_HASARD"]) :
+        // message generique pour ne pas exposer de details internes (noms de classes, stack).
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiError(HttpStatus.BAD_REQUEST.value(),
+                        "Corps de requete illisible ou invalide (format JSON incorrect, "
+                                + "ou valeur hors des valeurs autorisees)"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
