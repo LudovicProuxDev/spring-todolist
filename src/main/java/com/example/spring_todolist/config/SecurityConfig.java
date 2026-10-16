@@ -46,6 +46,8 @@ public class SecurityConfig {
                         // forward s'il n'est pas explicitement autorise.
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        // Documentation OpenAPI/Swagger UI : publique.
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // "/**" ne couvre pas le chemin de base lui-meme (ex. l'appel
                         // sans id, "GET /api/categories") : il faut aussi le lister.
                         .requestMatchers("/api/categories", "/api/categories/**").permitAll()
