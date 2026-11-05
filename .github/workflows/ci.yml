@@ -11,8 +11,11 @@ permissions:
 
 jobs:
   build:
-    name: Build
+    name: Backend - Build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - name: Recuperer le code
         uses: actions/checkout@v4
@@ -28,6 +31,8 @@ jobs:
 
       - name: Preparer Gradle (cache des dependances)
         uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: backend
 
       - name: Rendre gradlew executable
         run: chmod +x gradlew
@@ -39,13 +44,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-jar
-          path: build/libs/*.jar
+          path: backend/build/libs/*.jar
           retention-days: 7
 
   test:
-    name: Tests
+    name: Backend - Tests
     needs: build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     # La base PostgreSQL des tests est demarree par Testcontainers (voir
     # src/test/resources/application.properties) : Docker est disponible sur
     # les runners ubuntu-latest, aucun service n'est a declarer ici.
@@ -61,6 +69,8 @@ jobs:
 
       - name: Preparer Gradle (cache des dependances)
         uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: backend
 
       - name: Rendre gradlew executable
         run: chmod +x gradlew
@@ -73,5 +83,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: build/test-results/test/**/*.xml
+          path: backend/build/test-results/test/**/*.xml
           retention-days: 7
