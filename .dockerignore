@@ -29,3 +29,7 @@ docker-compose.yml
 
 # Artefacts WSL/Windows
 *:Zone.Identifier
+
+# Environnement local (secrets)
+.env
+.env.example

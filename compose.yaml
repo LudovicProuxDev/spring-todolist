@@ -8,6 +8,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-todolist}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-todolist}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-todolist}
+      # Obligatoire : pas de repli sur le secret de dev d'application.properties.
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?APP_JWT_SECRET doit etre defini (voir .env.example)}
+      # Optionnels : compte administrateur cree au demarrage s'il n'existe pas.
+      APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-}
     depends_on:
       db:
         condition: service_healthy

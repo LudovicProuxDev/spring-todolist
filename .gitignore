@@ -38,3 +38,6 @@ out/
 
 ### WSL ###
 *:Zone.Identifier
+
+### Environnement local (secrets) ###
+.env
