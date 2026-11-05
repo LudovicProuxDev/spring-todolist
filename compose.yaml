@@ -1,7 +1,24 @@
 services:
-  app:
+  frontend:
+    build:
+      context: ./frontend
+    # Application Angular servie par nginx, qui relaie /api vers le backend.
+    ports:
+      - "4200:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
     build:
       context: ./backend
+    # Publie pour l'acces direct a l'API et a Swagger UI ; le front passe par nginx.
     ports:
       - "8080:8080"
     environment:
@@ -17,6 +34,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Pret quand l'API repond (endpoint public, sans effet de bord).
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/api/categories"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     restart: unless-stopped
 
   db:

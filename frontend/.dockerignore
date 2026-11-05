@@ -1,0 +1,21 @@
+# Dependances et artefacts : reinstalles/reconstruits dans l'image.
+node_modules/
+dist/
+.angular/
+
+# IDE et outillage
+.vscode/
+.idea/
+.editorconfig
+.prettierrc
+
+# Git & docs
+.gitignore
+README.md
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Artefacts WSL/Windows
+*:Zone.Identifier
