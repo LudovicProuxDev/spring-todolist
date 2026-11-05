@@ -194,4 +194,49 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.findByUsername("inconnu"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
+
+    @Test
+    void createAdminIfMissing_whenUsernameFree_shouldCreateAdminWithHashedPassword() {
+        UserCreateRequest request = new UserCreateRequest(
+                "admin", "adminSecret1", null, null, "admin@example.com");
+        when(userRepository.existsByUsername("admin")).thenReturn(false);
+        when(userRepository.existsByEmail("admin@example.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        boolean created = userService.createAdminIfMissing(request);
+
+        assertThat(created).isTrue();
+        var savedUserCaptor = org.mockito.ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(savedUserCaptor.capture());
+        User saved = savedUserCaptor.getValue();
+        assertThat(saved.getRoles()).containsExactly(Role.ROLE_USER, Role.ROLE_ADMIN);
+        assertThat(passwordEncoder.matches("adminSecret1", saved.getPassword())).isTrue();
+        assertThat(saved.getPlainPassword()).isNull();
+    }
+
+    @Test
+    void createAdminIfMissing_whenUsernameAlreadyExists_shouldDoNothing() {
+        // Un compte existant n'est jamais promu : sinon, quiconque s'inscrirait
+        // avec ce nom avant le demarrage deviendrait administrateur.
+        when(userRepository.existsByUsername("admin")).thenReturn(true);
+        UserCreateRequest request = new UserCreateRequest(
+                "admin", "adminSecret1", null, null, "admin@example.com");
+
+        boolean created = userService.createAdminIfMissing(request);
+
+        assertThat(created).isFalse();
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createAdminIfMissing_whenEmailTaken_shouldThrowDuplicateResourceException() {
+        when(userRepository.existsByUsername("admin")).thenReturn(false);
+        when(userRepository.existsByEmail("admin@example.com")).thenReturn(true);
+        UserCreateRequest request = new UserCreateRequest(
+                "admin", "adminSecret1", null, null, "admin@example.com");
+
+        assertThatThrownBy(() -> userService.createAdminIfMissing(request))
+                .isInstanceOf(DuplicateResourceException.class);
+        verify(userRepository, never()).save(any());
+    }
 }

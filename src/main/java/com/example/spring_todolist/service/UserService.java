@@ -31,18 +31,24 @@ public class UserService {
 
     @Transactional
     public UserResponse register(UserCreateRequest request) {
+        return userMapper.toResponse(createUser(request, List.of(DEFAULT_ROLE)));
+    }
+
+    /**
+     * Cree le compte administrateur initial s'il n'existe pas encore (appele
+     * au demarrage par AdminAccountInitializer). Un compte deja present sous
+     * ce nom n'est jamais promu : sinon, quiconque s'inscrirait avec ce nom
+     * avant le demarrage deviendrait administrateur.
+     *
+     * @return true si le compte a ete cree, false s'il existait deja
+     */
+    @Transactional
+    public boolean createAdminIfMissing(UserCreateRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new DuplicateResourceException("Ce nom d'utilisateur est deja pris : " + request.username());
+            return false;
         }
-        if (userRepository.existsByEmail(request.email())) {
-            throw new DuplicateResourceException("Cette adresse email est deja utilisee : " + request.email());
-        }
-
-        User user = userMapper.toEntity(request);
-        user.setRoles(List.of(DEFAULT_ROLE));
-        hashPendingPlainPassword(user);
-
-        return userMapper.toResponse(userRepository.save(user));
+        createUser(request, List.of(DEFAULT_ROLE, Role.ROLE_ADMIN));
+        return true;
     }
 
     public List<UserResponse> findAll() {
@@ -81,6 +87,21 @@ public class UserService {
     /** Utilise par GET /api/users/me : le profil de l'utilisateur authentifie. */
     public UserResponse findByUsername(String username) {
         return userMapper.toResponse(findEntityByUsername(username));
+    }
+
+    private User createUser(UserCreateRequest request, List<Role> roles) {
+        if (userRepository.existsByUsername(request.username())) {
+            throw new DuplicateResourceException("Ce nom d'utilisateur est deja pris : " + request.username());
+        }
+        if (userRepository.existsByEmail(request.email())) {
+            throw new DuplicateResourceException("Cette adresse email est deja utilisee : " + request.email());
+        }
+
+        User user = userMapper.toEntity(request);
+        user.setRoles(roles);
+        hashPendingPlainPassword(user);
+
+        return userRepository.save(user);
     }
 
     private User getOrThrow(Integer id) {
