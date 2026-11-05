@@ -68,6 +68,17 @@ class TaskControllerTest {
     }
 
     @Test
+    void findById_whenExists_shouldReturn200() throws Exception {
+        when(taskService.findById(1)).thenReturn(new TaskResponse(
+                1, "Courses", null, new CategoryResponse(2, "Maison", "#00AA00")));
+
+        mockMvc.perform(get("/api/tasks/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value("Courses"))
+                .andExpect(jsonPath("$.category.label").value("Maison"));
+    }
+
+    @Test
     void findById_whenMissing_shouldReturn404() throws Exception {
         when(taskService.findById(99)).thenThrow(new ResourceNotFoundException("introuvable"));
 
@@ -118,10 +129,38 @@ class TaskControllerTest {
     }
 
     @Test
+    void update_whenMissing_shouldReturn404() throws Exception {
+        when(taskService.update(eq(99), any(TaskRequest.class)))
+                .thenThrow(new ResourceNotFoundException("introuvable"));
+
+        mockMvc.perform(put("/api/tasks/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new TaskRequest("Nouvelle", null))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void update_withBlankDescription_shouldReturn400() throws Exception {
+        mockMvc.perform(put("/api/tasks/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new TaskRequest(" ", null))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void delete_whenExists_shouldReturn204() throws Exception {
         mockMvc.perform(delete("/api/tasks/1"))
                 .andExpect(status().isNoContent());
 
         verify(taskService).delete(1);
+    }
+
+    @Test
+    void delete_whenMissing_shouldReturn404() throws Exception {
+        org.mockito.Mockito.doThrow(new ResourceNotFoundException("introuvable"))
+                .when(taskService).delete(99);
+
+        mockMvc.perform(delete("/api/tasks/99"))
+                .andExpect(status().isNotFound());
     }
 }

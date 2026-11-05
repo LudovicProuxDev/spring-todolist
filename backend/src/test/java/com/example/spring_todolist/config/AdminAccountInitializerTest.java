@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.example.spring_todolist.dto.UserCreateRequest;
 import com.example.spring_todolist.service.UserService;
@@ -41,6 +42,22 @@ class AdminAccountInitializerTest {
 
         verify(userService).createAdminIfMissing(
                 new UserCreateRequest("admin", "adminSecret1", null, null, "admin@example.com"));
+    }
+
+    @Test
+    void run_whenUsernameIsNull_shouldDoNothing() {
+        initializer(null, null, null).run(null);
+
+        verify(userService, never()).createAdminIfMissing(any());
+    }
+
+    @Test
+    void run_whenAdminIsCreated_shouldStartNormally() {
+        when(userService.createAdminIfMissing(any())).thenReturn(true);
+
+        initializer("admin", "adminSecret1", "admin@example.com").run(null);
+
+        verify(userService).createAdminIfMissing(any());
     }
 
     @Test

@@ -67,6 +67,24 @@ class UserMapperTest {
     }
 
     @Test
+    void updateEntity_withNames_shouldUpdateFirstnameAndLastname() {
+        User existing = User.builder()
+                .id(1)
+                .username("jdupont")
+                .firstname("Jean")
+                .lastname("Dupont")
+                .email("jean@example.com")
+                .build();
+        UserUpdateRequest request = new UserUpdateRequest("Jeanne", "Durand", null, null, null);
+
+        mapper.updateEntity(request, existing);
+
+        assertThat(existing.getFirstname()).isEqualTo("Jeanne");
+        assertThat(existing.getLastname()).isEqualTo("Durand");
+        assertThat(existing.getEmail()).isEqualTo("jean@example.com");
+    }
+
+    @Test
     void updateEntity_withPassword_shouldSetPlainPasswordNotThePersistedPasswordField() {
         User existing = User.builder().id(1).username("jdupont").password("ancien-hash").build();
         UserUpdateRequest request = new UserUpdateRequest(null, null, null, "nouveauSecret1", null);

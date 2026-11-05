@@ -127,6 +127,17 @@ class UserControllerTest {
     }
 
     @Test
+    void findById_whenExists_shouldReturn200WithoutPassword() throws Exception {
+        when(userService.findById(1)).thenReturn(new UserResponse(
+                1, "jdupont", "Jean", "Dupont", "jean.dupont@example.com", List.of(Role.ROLE_USER)));
+
+        mockMvc.perform(get("/api/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("jdupont"))
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
     void findById_whenMissing_shouldReturn404() throws Exception {
         when(userService.findById(99)).thenThrow(new ResourceNotFoundException("introuvable"));
 

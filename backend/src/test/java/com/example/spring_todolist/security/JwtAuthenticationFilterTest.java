@@ -3,6 +3,7 @@ package com.example.spring_todolist.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -101,6 +103,37 @@ class JwtAuthenticationFilterTest {
         filter.doFilter(request, response, filterChain);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_withNonBearerHeader_shouldIgnoreItAndContinueChain() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Basic amR1cG9udDpzZWNyZXQ=");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verifyNoInteractions(jwtService, userDetailsService);
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_whenAlreadyAuthenticated_shouldKeepExistingAuthentication() throws Exception {
+        var existing = new UsernamePasswordAuthenticationToken("deja-connecte", null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(existing);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer un-jeton-valide");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
+        when(jwtService.isValid("un-jeton-valide")).thenReturn(true);
+
+        filter.doFilter(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(existing);
+        verifyNoInteractions(userDetailsService);
         verify(filterChain).doFilter(request, response);
     }
 }
