@@ -1,7 +1,11 @@
 # Spring Todolist
 
-A REST API for managing a todo list: **categories**, **tasks** and **users**, secured with **JWT** authentication.
-Built with Spring Boot 4, Java 21 and PostgreSQL, packaged with Docker, and tested with JUnit (written test-first).
+A todo list application, made of two parts:
+
+- **`backend/`**: a REST API for **categories**, **tasks** and **users**, secured with **JWT** authentication. Built with Spring Boot 4, Java 21 and PostgreSQL, and tested with JUnit (written test-first).
+- **`frontend/`**: an Angular 22 single-page application with Angular Material, covering the whole API, including user administration.
+
+Both run in Docker containers, orchestrated by Docker Compose.
 
 ---
 
@@ -15,9 +19,10 @@ Built with Spring Boot 4, Java 21 and PostgreSQL, packaged with Docker, and test
 - [Error format](#error-format)
 - [Data model](#data-model)
 - [Project structure](#project-structure)
+- [Frontend](#frontend)
 - [Tests](#tests)
 - [Continuous integration](#continuous-integration)
-- [Docker image](#docker-image)
+- [Docker images](#docker-images)
 - [Known limitations](#known-limitations)
 
 ---
@@ -26,14 +31,18 @@ Built with Spring Boot 4, Java 21 and PostgreSQL, packaged with Docker, and test
 
 | Area              | Technology                                                        |
 |-------------------|-------------------------------------------------------------------|
-| Language          | Java 21                                                           |
-| Framework         | Spring Boot 4.1 (Web MVC, Data JPA, Security, Validation)         |
+| Backend language  | Java 21                                                           |
+| Backend framework | Spring Boot 4.1 (Web MVC, Data JPA, Security, Validation)         |
 | Database          | PostgreSQL 17                                                     |
 | Authentication    | JWT (HMAC-SHA256) via [jjwt](https://github.com/jwtk/jjwt) 0.12   |
 | API documentation | springdoc-openapi 3 (OpenAPI 3 + Swagger UI)                      |
 | Boilerplate       | Lombok                                                            |
-| Build             | Gradle 9 (Kotlin DSL) with the Gradle Wrapper                     |
-| Containers        | Docker (multi-stage build) + Docker Compose                       |
+| Backend build     | Gradle 9 (Kotlin DSL) with the Gradle Wrapper                     |
+| Frontend          | Angular 22 (standalone components, signals, zoneless), TypeScript 6 |
+| UI components     | Angular Material 22 (Material 3)                                  |
+| Frontend tests    | Vitest 5 with jsdom (Angular CLI unit-test builder)               |
+| Web server        | nginx (serves the frontend and proxies `/api` to the backend)     |
+| Containers        | Docker (multi-stage builds) + Docker Compose                      |
 | CI                | GitHub Actions                                                    |
 
 ---
@@ -43,7 +52,8 @@ Built with Spring Boot 4, Java 21 and PostgreSQL, packaged with Docker, and test
 ### Prerequisites
 
 - **Docker** with the Compose plugin, to run the whole stack.
-- **JDK 21**, only if you want to build or run the app outside Docker. The Gradle Wrapper downloads Gradle for you.
+- **JDK 21**, only to build or run the backend outside Docker. The Gradle Wrapper downloads Gradle for you.
+- **Node.js 22.22+ or 24**, only to work on the frontend outside Docker.
 
 ### Run with Docker Compose
 
@@ -57,45 +67,58 @@ docker compose up -d --build
 
 If `APP_JWT_SECRET` is missing, Compose refuses to start and says so.
 
-This starts two services, defined in [`compose.yaml`](compose.yaml):
+This starts three services, defined in [`compose.yaml`](compose.yaml):
 
-| Service | Description                                                    | Port                       |
-|---------|----------------------------------------------------------------|----------------------------|
-| `app`   | The Spring Boot API, built from the [`Dockerfile`](Dockerfile) | `8080` on the host         |
-| `db`    | PostgreSQL 17 (Alpine), with a persistent `pgdata` volume      | not exposed (internal only)|
+| Service    | Description                                                                  | Port                        |
+|------------|------------------------------------------------------------------------------|-----------------------------|
+| `frontend` | The Angular app served by nginx, built from [`frontend/Dockerfile`](frontend/Dockerfile) | `4200` on the host |
+| `backend`  | The Spring Boot API, built from [`backend/Dockerfile`](backend/Dockerfile)   | `8080` on the host          |
+| `db`       | PostgreSQL 17 (Alpine), with a persistent `pgdata` volume                    | not exposed (internal only) |
 
-The `app` service waits for `db` to pass its health check (`pg_isready`) before starting.
+The `backend` service waits for `db` to pass its health check (`pg_isready`) before starting.
 
 Once it is up:
 
+- Application: <http://localhost:4200>
 - API: <http://localhost:8080/api>
 - Swagger UI: <http://localhost:8080/swagger-ui/index.html>
 - Raw OpenAPI spec (JSON): <http://localhost:8080/v3/api-docs>
 
 To stop the stack: `docker compose down`. Add `-v` to also delete the database volume.
 
-### Run locally with Gradle
+### Run the backend locally with Gradle
 
-The app needs a PostgreSQL database. Point it to one with the standard Spring environment variables, then start it:
+The backend needs a PostgreSQL database. Point it to one with the standard Spring environment variables, then start it:
 
 ```bash
+cd backend
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/todolist
 export SPRING_DATASOURCE_USERNAME=todolist
 export SPRING_DATASOURCE_PASSWORD=todolist
 ./gradlew bootRun
 ```
 
+### Run the frontend locally with the Angular dev server
+
+```bash
+cd frontend
+npm ci
+npm start
+```
+
+The app is then served on <http://localhost:4200>, with live reload. [`proxy.conf.json`](frontend/proxy.conf.json) forwards `/api` calls to the backend on `http://localhost:8080`, so the backend must be running, either with Gradle or with `docker compose up -d backend`.
+
 ---
 
 ## Configuration
 
-Configuration lives in [`src/main/resources/application.properties`](src/main/resources/application.properties). Any property can be overridden with an environment variable.
+Backend configuration lives in [`backend/src/main/resources/application.properties`](backend/src/main/resources/application.properties). Any property can be overridden with an environment variable. The frontend needs no configuration: it always calls the API on the same origin, under `/api`.
 
 | Property / variable                                    | Default                    | Description                                              |
 |--------------------------------------------------------|----------------------------|----------------------------------------------------------|
 | `SPRING_DATASOURCE_URL`                                | *(none)*                   | JDBC URL of the PostgreSQL database                      |
 | `SPRING_DATASOURCE_USERNAME` / `_PASSWORD`             | *(none)*                   | Database credentials                                     |
-| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD`  | `todolist` (all three)     | Used by `compose.yaml` for both the `db` and `app` services |
+| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD`  | `todolist` (all three)     | Used by `compose.yaml` for both the `db` and `backend` services |
 | `spring.jpa.hibernate.ddl-auto`                        | `update`                   | Hibernate creates and updates the schema from the entities |
 | `app.jwt.secret` (`APP_JWT_SECRET`)                    | a development key          | Base64-encoded HMAC key used to sign JWTs. **Required** by `compose.yaml` |
 | `app.jwt.expiration-ms` (`APP_JWT_EXPIRATION_MS`)      | `86400000` (24 h)          | Token lifetime                                           |
@@ -106,7 +129,7 @@ Configuration lives in [`src/main/resources/application.properties`](src/main/re
 [`.env.example`](.env.example) lists every variable that Compose uses.
 
 > [!WARNING]
-> The default `app.jwt.secret` is committed to the repository and is **for development only**: anyone who knows it can forge valid tokens. It is only used when the app runs outside Compose (`./gradlew bootRun`) without `APP_JWT_SECRET`. In production, always set `APP_JWT_SECRET` to a secret that is generated and stored separately, for example with `openssl rand -base64 64`.
+> The default `app.jwt.secret` is committed to the repository and is **for development only**: anyone who knows it can forge valid tokens. It is only used when the backend runs outside Compose (`./gradlew bootRun`) without `APP_JWT_SECRET`. In production, always set `APP_JWT_SECRET` to a secret that is generated and stored separately, for example with `openssl rand -base64 64`.
 
 > [!NOTE]
 > `ddl-auto=update` is convenient during development. A migration tool such as Flyway or Liquibase should replace it before going to production.
@@ -203,7 +226,7 @@ The API is **stateless**: there is no HTTP session and no cookie. CSRF protectio
 
 ### Access rules
 
-They are defined in [`SecurityConfig`](src/main/java/com/example/spring_todolist/config/SecurityConfig.java) and in `@PreAuthorize` annotations on the controllers.
+They are defined in [`SecurityConfig`](backend/src/main/java/com/example/spring_todolist/config/SecurityConfig.java) and in `@PreAuthorize` annotations on the controllers.
 
 | Path                                         | Access                                    |
 |----------------------------------------------|-------------------------------------------|
@@ -215,13 +238,13 @@ They are defined in [`SecurityConfig`](src/main/java/com/example/spring_todolist
 
 ### Roles
 
-Roles are a closed set, defined by the [`Role`](src/main/java/com/example/spring_todolist/entity/Role.java) enum: `ROLE_USER` and `ROLE_ADMIN`. If a request contains an unknown role, JSON parsing rejects it with a 400.
+Roles are a closed set, defined by the [`Role`](backend/src/main/java/com/example/spring_todolist/entity/Role.java) enum: `ROLE_USER` and `ROLE_ADMIN`. If a request contains an unknown role, JSON parsing rejects it with a 400.
 
 New accounts always get `ROLE_USER`, whether they come from public registration or from an admin. Nobody can choose their own role at sign-up.
 
 ### Creating the first admin
 
-Accounts created through the API always get `ROLE_USER`, so the first admin is created at startup by [`AdminAccountInitializer`](src/main/java/com/example/spring_todolist/config/AdminAccountInitializer.java). Set these variables, for example in `.env`:
+Accounts created through the API always get `ROLE_USER`, so the first admin is created at startup by [`AdminAccountInitializer`](backend/src/main/java/com/example/spring_todolist/config/AdminAccountInitializer.java). Set these variables, for example in `.env`:
 
 ```dotenv
 APP_ADMIN_USERNAME=admin
@@ -242,7 +265,7 @@ Once you have an admin, you can manage the other users' roles through `PUT /api/
 
 ## Error format
 
-Every error response (4xx) has the same JSON body, defined by [`ApiError`](src/main/java/com/example/spring_todolist/dto/ApiError.java):
+Every error response (4xx) has the same JSON body, defined by [`ApiError`](backend/src/main/java/com/example/spring_todolist/dto/ApiError.java):
 
 ```json
 {
@@ -272,7 +295,7 @@ On login, the API returns the same message whether the username or the password 
 
 ## Data model
 
-Hibernate generates the schema from the JPA entities in [`entity/`](src/main/java/com/example/spring_todolist/entity).
+Hibernate generates the schema from the JPA entities in [`entity/`](backend/src/main/java/com/example/spring_todolist/entity).
 
 ```
 category                     task                              "user"                       user_roles
@@ -296,9 +319,17 @@ color                        created_at   NOT NULL             password   NOT NU
 
 ```
 spring-todolist/
-├── .github/workflows/ci.yml        GitHub Actions pipeline (build + tests)
-├── compose.yaml                    Docker Compose stack (app + PostgreSQL)
+├── .github/workflows/ci.yml        GitHub Actions pipeline (backend + frontend)
+├── compose.yaml                    Docker Compose stack (frontend + backend + PostgreSQL)
 ├── .env.example                    Template for the local, unversioned .env file
+├── backend/                        Spring Boot API
+└── frontend/                       Angular application (see Frontend below)
+```
+
+### Backend
+
+```
+backend/
 ├── Dockerfile                      Multi-stage image build
 ├── build.gradle.kts                Gradle build and dependencies
 ├── settings.gradle.kts
@@ -323,7 +354,7 @@ spring-todolist/
         └── resources/application.properties     Test configuration
 ```
 
-### Layers
+### Backend layers
 
 A request goes through the layers in this order:
 
@@ -341,9 +372,63 @@ HTTP → JwtAuthenticationFilter → Controller → Service → Repository → P
 
 ---
 
+## Frontend
+
+The Angular application lives in [`frontend/`](frontend). Its interface is in French, like the API's error messages.
+
+### Screens
+
+| Route          | Access                 | What it does                                                                                     |
+|----------------|------------------------|--------------------------------------------------------------------------------------------------|
+| `/login`       | Logged-out users       | Log in. The API's error message is shown when the credentials are wrong.                         |
+| `/register`    | Logged-out users       | Create an account, then log in automatically.                                                    |
+| `/tasks`       | Logged-in users        | List tasks (newest first), filter by category, create, edit and delete tasks.                     |
+| `/categories`  | Logged-in users        | List, create, edit and delete categories, with a colour picker. Deleting a category still in use shows the API's 409 message. |
+| `/profile`     | Logged-in users        | Edit your first name, last name, email and password.                                             |
+| `/admin/users` | Admins only            | List users, create users, edit their details and roles, delete users (except your own account).  |
+
+Unknown routes redirect to `/tasks`. On small screens, secondary table columns are hidden and their content is shown under the main column, so the action buttons stay visible.
+
+### How it works
+
+- **Authentication**: `AuthService` stores the JWT in `localStorage` and decodes its payload to get the username, the roles and the expiry date. The front never checks the signature: the backend does that on every request. The UI only uses the decoded payload to adapt itself, for example to show the admin menu.
+- **HTTP interceptor**: `authInterceptor` adds `Authorization: Bearer <token>` to every `/api` call except `/api/auth/**`. If the backend answers 401 to an authenticated call (expired token, deleted account), it logs the user out and redirects to `/login`.
+- **Guards**: `authGuard` protects the application pages, `adminGuard` protects `/admin/users`, and `guestGuard` sends logged-in users away from `/login` and `/register`. They only improve the user experience: the backend enforces the real access rules.
+- **Errors**: API errors are shown in a snackbar, using the `message` field of the backend's `ApiError` body.
+- **Same origin**: the browser only talks to the frontend's origin. In Docker, nginx forwards `/api` to the `backend` service; with `npm start`, the Angular dev server does the same through `proxy.conf.json`. No CORS configuration is needed.
+
+> [!NOTE]
+> If an admin changes their own roles, the change applies at their next login, because the roles are read from the current token.
+
+### Structure
+
+```
+frontend/
+├── Dockerfile, nginx.conf          Multi-stage image build and nginx configuration
+├── proxy.conf.json                 Dev server proxy: /api → http://localhost:8080
+└── src/
+    ├── app/
+    │   ├── app.ts, app.html        Shell: toolbar, navigation, user menu
+    │   ├── app.config.ts           Providers: router, HTTP client + interceptor, French locale, icons
+    │   ├── app.routes.ts           Lazy-loaded routes and their guards
+    │   ├── core/
+    │   │   ├── models.ts           TypeScript mirror of the backend DTOs
+    │   │   ├── notifier.ts         Snackbar notifications and API error messages
+    │   │   ├── auth/               AuthService, interceptor, guards
+    │   │   └── api/                CategoryService, TaskService, UserService
+    │   ├── features/               One folder per screen: auth, tasks, categories, profile, admin
+    │   └── shared/                 Confirmation dialog, form helpers, role label pipe
+    ├── testing/                    Test helpers (fake JWT)
+    └── styles.scss                 Material theme (follows the system light/dark mode) and shared styles
+```
+
+---
+
 ## Tests
 
-The project was developed test-first, and has about 155 tests organised like the main code:
+### Backend tests
+
+The backend was developed test-first, and has about 175 tests organised like the main code. They cover every branch of the code (measured with JaCoCo):
 
 | Package       | What is tested                                                                 | Kind                                   |
 |---------------|--------------------------------------------------------------------------------|----------------------------------------|
@@ -351,36 +436,66 @@ The project was developed test-first, and has about 155 tests organised like the
 | `mapper`      | Entity ↔ DTO conversions                                                       | Unit                                   |
 | `service`     | Business rules, with mocked repositories                                       | Unit (Mockito)                         |
 | `repository`  | Derived queries and constraints against a real database                        | `@DataJpaTest` (PostgreSQL)            |
-| `controller`  | Routes, status codes, validation and error bodies                              | `@WebMvcTest` (MockMvc)                |
-| `security`    | JWT generation and validation, the filter, `UserDetails`, and end-to-end access rules | Unit and `@SpringBootTest` integration |
+| `controller`  | Routes, status codes, validation and error bodies, for each controller (Auth, Category, Task, User) | Standalone MockMvc            |
+| `security`    | JWT generation and validation, the filter, `UserDetails`, the JSON bodies of 401 and 403 responses, and end-to-end access rules | Unit and `@SpringBootTest` integration |
 | `config`      | Creation of the initial admin account                                          | Unit (Mockito)                         |
 
-### Running the tests
+#### Running the backend tests
 
 ```bash
+cd backend
 ./gradlew test
 ```
 
-The only requirement is a running **Docker** daemon. The tests use [Testcontainers](https://testcontainers.com/): the `jdbc:tc:postgresql:17-alpine:///todolist` URL in [`src/test/resources/application.properties`](src/test/resources/application.properties) starts a throwaway PostgreSQL 17 container when the tests begin, and removes it when they end. It does not publish any fixed port on your machine, so it does not conflict with another database already using 5432, and it never touches your development data.
+The only requirement is a running **Docker** daemon. The tests use [Testcontainers](https://testcontainers.com/): the `jdbc:tc:postgresql:17-alpine:///todolist` URL in [`backend/src/test/resources/application.properties`](backend/src/test/resources/application.properties) starts a throwaway PostgreSQL 17 container when the tests begin, and removes it when they end. It does not publish any fixed port on your machine, so it does not conflict with another database already using 5432, and it never touches your development data.
 
-The HTML report is written to `build/reports/tests/test/index.html`.
+The HTML report is written to `backend/build/reports/tests/test/index.html`.
+
+### Frontend tests
+
+About 115 unit tests run with Vitest in a jsdom environment. No browser is needed:
+
+```bash
+cd frontend
+npx ng test --watch=false
+```
+
+Every source file has tests:
+
+| Area        | What is tested                                                                                     |
+|-------------|----------------------------------------------------------------------------------------------------|
+| Routing     | Each route loads the right page behind the right guard; only `/login` and `/register` are public    |
+| App config  | French locale, icon font, and the interceptor registered on the HTTP client                        |
+| `core/auth` | Token decoding and expiry, login and logout, the interceptor (header, 401 handling), the three guards |
+| `core/api`  | URL, method and body of every API call                                                             |
+| `core`      | Error message extraction and snackbar notifications                                                |
+| Pages       | Loading and sorting, create, edit and delete flows through dialogs, confirmation, API errors (including the 409 on categories), form validation, self-deletion blocked for admins |
+| Dialogs     | Form prefill, validation and the request each dialog returns                                       |
+| `shared`    | Form helpers, role labels and the confirmation dialog                                              |
+
+The page tests replace the API services, `MatDialog` and the notifier with test doubles from `src/testing/`.
 
 ---
 
 ## Continuous integration
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and on every pull request that targets `main`. It has two jobs:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and on every pull request that targets `main`. It has three jobs:
 
-1. **Build**: sets up JDK 21 (Temurin), validates the Gradle Wrapper checksum, compiles and assembles the jar (`./gradlew build -x test`), then uploads the jar as an artifact, kept for 7 days.
-2. **Tests**: runs after the build job. It runs `./gradlew test`, which starts its own PostgreSQL container through Testcontainers (Docker is available on GitHub's Ubuntu runners), then uploads the JUnit XML reports even if tests fail.
+1. **Backend - Build**: in `backend/`, sets up JDK 21 (Temurin), validates the Gradle Wrapper checksum, compiles and assembles the jar (`./gradlew build -x test`), then uploads the jar as an artifact, kept for 7 days.
+2. **Backend - Tests**: runs after the build job. It runs `./gradlew test`, which starts its own PostgreSQL container through Testcontainers (Docker is available on GitHub's Ubuntu runners), then uploads the JUnit XML reports even if tests fail.
+3. **Frontend - Tests et build**: in `frontend/`, sets up Node.js 24 with the npm cache, installs the dependencies with `npm ci`, runs the unit tests, then builds the production bundle. It runs in parallel with the backend jobs.
 
 The workflow only has read access to the repository (`permissions: contents: read`).
 
 ---
 
-## Docker image
+## Docker images
 
-The [`Dockerfile`](Dockerfile) uses a multi-stage build:
+Both images use multi-stage builds and run as a non-root user.
+
+### Backend
+
+The [`backend/Dockerfile`](backend/Dockerfile) has two stages:
 
 1. **Build stage** (`gradle:9.8.1-jdk21`)
    - Downloads the dependencies first, in their own layer, so they are only fetched again when the build files change.
@@ -392,7 +507,21 @@ The [`Dockerfile`](Dockerfile) uses a multi-stage build:
    - Runs as a non-root user (`spring`).
    - JVM options (`JAVA_OPTS`) default to `-XX:MaxRAMPercentage=75 -XX:+UseContainerSupport`, so the heap size follows the container's memory limit.
 
-[`.dockerignore`](.dockerignore) keeps build outputs, IDE files, Git metadata, Docker files and `.env` files out of the build context.
+[`backend/.dockerignore`](backend/.dockerignore) keeps build outputs, IDE files, Git metadata, Docker files and `.env` files out of the build context.
+
+### Frontend
+
+The [`frontend/Dockerfile`](frontend/Dockerfile) has two stages:
+
+1. **Build stage** (`node:24-alpine`)
+   - Installs the dependencies with `npm ci` first, in their own layer, with a BuildKit cache mount for npm.
+   - Builds the production bundle with `ng build`.
+2. **Runtime stage** (`nginxinc/nginx-unprivileged:1.29-alpine`)
+   - Serves the static files with nginx, which listens on port 8080 as the `nginx` user. Compose maps it to port `4200` on the host.
+   - [`nginx.conf`](frontend/nginx.conf) forwards `/api/` to `http://backend:8080`, and sends every other unknown path to `index.html`, so Angular routes such as `/admin/users` also work when the page is reloaded.
+   - Hashed assets (`.js`, `.css`, fonts, images) are cached for one year; `index.html` is always revalidated.
+
+[`frontend/.dockerignore`](frontend/.dockerignore) keeps `node_modules`, build outputs and editor files out of the build context.
 
 ---
 
@@ -402,4 +531,6 @@ These are current choices or not-yet-implemented features, not bugs:
 
 - Categories and tasks are public and shared by everyone: they are not linked to a user account.
 - The database schema is managed by `ddl-auto=update`, not by versioned migrations.
-- There is no pagination on the list endpoints.
+- There is no pagination on the list endpoints, and the frontend loads full lists.
+- The frontend stores the JWT in `localStorage`, so any script injected into the page could read it. Angular escapes rendered values by default, which limits this risk. An `HttpOnly` cookie would remove it, but it would require changes to the backend.
+- The frontend has no end-to-end test suite yet: only unit tests run in CI.
