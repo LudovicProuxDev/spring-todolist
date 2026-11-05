@@ -46,26 +46,9 @@ jobs:
     name: Tests
     needs: build
     runs-on: ubuntu-latest
-    # Le demarrage du contexte Spring (contextLoads) a besoin d'une
-    # vraie base pour configurer le DataSource JPA/Hibernate.
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: todolist
-          POSTGRES_USER: todolist
-          POSTGRES_PASSWORD: todolist
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U todolist -d todolist"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/todolist
-      SPRING_DATASOURCE_USERNAME: todolist
-      SPRING_DATASOURCE_PASSWORD: todolist
+    # La base PostgreSQL des tests est demarree par Testcontainers (voir
+    # src/test/resources/application.properties) : Docker est disponible sur
+    # les runners ubuntu-latest, aucun service n'est a declarer ici.
     steps:
       - name: Recuperer le code
         uses: actions/checkout@v4
