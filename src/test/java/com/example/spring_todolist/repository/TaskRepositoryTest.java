@@ -53,6 +53,21 @@ class TaskRepositoryTest {
     }
 
     @Test
+    void existsByCategoryId_whenCategoryHasTasks_shouldReturnTrue() {
+        Category travail = categoryRepository.save(Category.builder().label("Travail").build());
+        taskRepository.save(Task.builder().description("Rapport").category(travail).build());
+
+        assertThat(taskRepository.existsByCategoryId(travail.getId())).isTrue();
+    }
+
+    @Test
+    void existsByCategoryId_whenCategoryHasNoTask_shouldReturnFalse() {
+        Category vide = categoryRepository.save(Category.builder().label("Vide").build());
+
+        assertThat(taskRepository.existsByCategoryId(vide.getId())).isFalse();
+    }
+
+    @Test
     void save_withoutCategory_shouldPersistTaskWithNullCategory() {
         Task saved = taskRepository.save(Task.builder().description("Sans categorie").build());
 

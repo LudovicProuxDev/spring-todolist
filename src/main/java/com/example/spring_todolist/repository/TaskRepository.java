@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TaskRepository extends JpaRepository<Task, Integer> {
 
     List<Task> findByCategoryId(Integer categoryId);
+
+    boolean existsByCategoryId(Integer categoryId);
 }

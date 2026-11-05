@@ -87,6 +87,8 @@ public class CategoryController {
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Categorie supprimee"),
         @ApiResponse(responseCode = "404", description = "Categorie introuvable",
+                content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "409", description = "Categorie encore utilisee par au moins une tache",
                 content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @DeleteMapping("/{id}")

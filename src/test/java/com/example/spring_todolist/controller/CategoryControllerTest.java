@@ -18,6 +18,7 @@ import java.util.List;
 import com.example.spring_todolist.dto.CategoryRequest;
 import com.example.spring_todolist.dto.CategoryResponse;
 import com.example.spring_todolist.exception.GlobalExceptionHandler;
+import com.example.spring_todolist.exception.ResourceInUseException;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
 import com.example.spring_todolist.service.CategoryService;
 
@@ -123,5 +124,16 @@ class CategoryControllerTest {
 
         mockMvc.perform(delete("/api/categories/99"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void delete_whenCategoryStillHasTasks_shouldReturn409() throws Exception {
+        org.mockito.Mockito.doThrow(new ResourceInUseException("utilisee"))
+                .when(categoryService).delete(1);
+
+        mockMvc.perform(delete("/api/categories/1"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("utilisee"));
     }
 }

@@ -5,9 +5,11 @@ import java.util.List;
 import com.example.spring_todolist.dto.CategoryRequest;
 import com.example.spring_todolist.dto.CategoryResponse;
 import com.example.spring_todolist.entity.Category;
+import com.example.spring_todolist.exception.ResourceInUseException;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
 import com.example.spring_todolist.mapper.CategoryMapper;
 import com.example.spring_todolist.repository.CategoryRepository;
+import com.example.spring_todolist.repository.TaskRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final TaskRepository taskRepository;
     private final CategoryMapper categoryMapper;
 
     public List<CategoryResponse> findAll() {
@@ -47,6 +50,12 @@ public class CategoryService {
     public void delete(Integer id) {
         if (!categoryRepository.existsById(id)) {
             throw new ResourceNotFoundException("Categorie introuvable : id=" + id);
+        }
+        // Verifie explicitement plutot que de laisser la cle etrangere task.category_id
+        // faire echouer la suppression en base (erreur 500 peu parlante).
+        if (taskRepository.existsByCategoryId(id)) {
+            throw new ResourceInUseException("Categorie utilisee par au moins une tache : id=" + id
+                    + ". Reaffectez ou supprimez ces taches avant de supprimer la categorie.");
         }
         categoryRepository.deleteById(id);
     }

@@ -13,9 +13,11 @@ import java.util.Optional;
 import com.example.spring_todolist.dto.CategoryRequest;
 import com.example.spring_todolist.dto.CategoryResponse;
 import com.example.spring_todolist.entity.Category;
+import com.example.spring_todolist.exception.ResourceInUseException;
 import com.example.spring_todolist.exception.ResourceNotFoundException;
 import com.example.spring_todolist.mapper.CategoryMapper;
 import com.example.spring_todolist.repository.CategoryRepository;
+import com.example.spring_todolist.repository.TaskRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,11 +31,14 @@ class CategoryServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
+    @Mock
+    private TaskRepository taskRepository;
+
     private CategoryService categoryService;
 
     @BeforeEach
     void setUp() {
-        categoryService = new CategoryService(categoryRepository, new CategoryMapper());
+        categoryService = new CategoryService(categoryRepository, taskRepository, new CategoryMapper());
     }
 
     @Test
@@ -116,6 +121,16 @@ class CategoryServiceTest {
 
         assertThatThrownBy(() -> categoryService.delete(99))
                 .isInstanceOf(ResourceNotFoundException.class);
+        verify(categoryRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void delete_whenCategoryStillHasTasks_shouldThrowResourceInUseException() {
+        when(categoryRepository.existsById(1)).thenReturn(true);
+        when(taskRepository.existsByCategoryId(1)).thenReturn(true);
+
+        assertThatThrownBy(() -> categoryService.delete(1))
+                .isInstanceOf(ResourceInUseException.class);
         verify(categoryRepository, never()).deleteById(any());
     }
 }
