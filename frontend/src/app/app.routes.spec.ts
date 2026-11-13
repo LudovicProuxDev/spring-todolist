@@ -40,8 +40,8 @@ describe('routes', () => {
     expect(unprotected).toEqual(['login', 'register']);
   });
 
-  it('should redirect the root and unknown paths to /tasks', () => {
-    expect(route('')).toMatchObject({ redirectTo: 'tasks', pathMatch: 'full' });
-    expect(route('**')).toMatchObject({ redirectTo: 'tasks' });
+  it('should open the site on the login form (root and unknown paths)', () => {
+    expect(route('')).toMatchObject({ redirectTo: 'login', pathMatch: 'full' });
+    expect(route('**')).toMatchObject({ redirectTo: 'login' });
   });
 });

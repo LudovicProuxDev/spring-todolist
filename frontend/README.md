@@ -84,7 +84,7 @@ The interface is in French.
 | `/profile`     | `authGuard`  | `ProfilePage`      | Edit first name, last name, email and password. An empty password keeps the current one |
 | `/admin/users` | `adminGuard` | `UserListPage`     | List, create, edit (including roles) and delete users. You cannot delete your own account |
 
-`/` redirects to `/tasks`, and so does any unknown route. Each route sets the page title.
+The site opens on the login form: `/` and any unknown route redirect to `/login`. A user who is already logged in is sent on to `/tasks` by `guestGuard`, and lands there after logging in or registering. Each route sets the page title.
 
 The shell ([`app.ts`](src/app/app.ts) and [`app.html`](src/app/app.html)) shows a toolbar with the navigation links and a user menu (profile, logout). It shows the **Utilisateurs** link to admins only.
 

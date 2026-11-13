@@ -389,7 +389,7 @@ The Angular application lives in [`frontend/`](frontend). Its interface is in Fr
 | `/profile`     | Logged-in users        | Edit your first name, last name, email and password.                                             |
 | `/admin/users` | Admins only            | List users, create users, edit their details and roles, delete users (except your own account).  |
 
-Unknown routes redirect to `/tasks`. On small screens, secondary table columns are hidden and their content is shown under the main column, so the action buttons stay visible.
+The site opens on the login form: `/` and unknown routes redirect to `/login`, and a user who is already logged in is sent on to `/tasks`. On small screens, secondary table columns are hidden and their content is shown under the main column, so the action buttons stay visible.
 
 ### How it works
 

@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 import { adminGuard, authGuard, guestGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'tasks' },
+  { path: '', pathMatch: 'full', redirectTo: 'login' },
   {
     path: 'login',
     title: 'Connexion',
@@ -41,5 +41,5 @@ export const routes: Routes = [
     canActivate: [adminGuard],
     loadComponent: () => import('./features/admin/user-list-page').then((m) => m.UserListPage),
   },
-  { path: '**', redirectTo: 'tasks' },
+  { path: '**', redirectTo: 'login' },
 ];
