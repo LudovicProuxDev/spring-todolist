@@ -88,6 +88,17 @@ describe('AuthService', () => {
 
     expect(auth.isAuthenticated()).toBe(false);
     expect(auth.getToken()).toBeNull();
+    expect(auth.username()).toBeNull();
+    expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
+  });
+
+  it('should drop an unreadable stored token', () => {
+    localStorage.setItem(TOKEN_STORAGE_KEY, 'pas-un-jwt');
+
+    const auth = createService();
+
+    expect(auth.isAuthenticated()).toBe(false);
+    expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
   });
 
   it('should not be admin with ROLE_USER only', () => {

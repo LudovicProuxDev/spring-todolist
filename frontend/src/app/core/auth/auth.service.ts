@@ -93,9 +93,16 @@ export class AuthService {
     this.token.set(token);
   }
 
+  /** Un jeton expire ou illisible est supprime des le demarrage. */
   private readStoredToken(): string | null {
     try {
-      return localStorage.getItem(TOKEN_STORAGE_KEY);
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      const payload = token ? decodeToken(token) : null;
+      if (token && (!payload || payload.exp * 1000 <= Date.now())) {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        return null;
+      }
+      return token;
     } catch {
       return null;
     }
