@@ -7,6 +7,8 @@ A todo list application, made of two parts:
 
 Both run in Docker containers, orchestrated by Docker Compose.
 
+Each part has its own developer guide: [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md).
+
 ---
 
 ## Table of contents
@@ -322,8 +324,8 @@ spring-todolist/
 ├── .github/workflows/ci.yml        GitHub Actions pipeline (backend + frontend)
 ├── compose.yaml                    Docker Compose stack (frontend + backend + PostgreSQL)
 ├── .env.example                    Template for the local, unversioned .env file
-├── backend/                        Spring Boot API
-└── frontend/                       Angular application (see Frontend below)
+├── backend/                        Spring Boot API (see backend/README.md)
+└── frontend/                       Angular application (see frontend/README.md)
 ```
 
 ### Backend
