@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
 import { TaskDialog, TaskDialogData } from './task-dialog';
 
@@ -11,8 +11,8 @@ describe('TaskDialog', () => {
     TestBed.configureTestingModule({
       imports: [TaskDialog],
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: data },
-        { provide: MatDialogRef, useValue: { close } },
+        { provide: DIALOG_DATA, useValue: data },
+        { provide: DialogRef, useValue: { close } },
       ],
     });
     const fixture = TestBed.createComponent(TaskDialog);

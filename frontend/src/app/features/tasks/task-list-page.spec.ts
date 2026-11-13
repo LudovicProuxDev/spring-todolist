@@ -58,7 +58,7 @@ describe('TaskListPage', () => {
     TestBed.overrideProvider(TaskService, { useValue: { findAll: () => of([]) } });
     const { element } = await render();
 
-    expect(element.querySelector('.empty')?.textContent).toContain('Aucune tâche');
+    expect(element.querySelector('.alert')?.textContent).toContain('Aucune tâche');
   });
 
   it('should reload tasks when the category filter changes', async () => {
@@ -67,6 +67,19 @@ describe('TaskListPage', () => {
     component.changeFilter(2);
 
     expect(taskService.findAll).toHaveBeenLastCalledWith(2);
+  });
+
+  it('should filter from the select ("" = all categories)', async () => {
+    const { element } = await render();
+    const select = element.querySelector<HTMLSelectElement>('#task-filter')!;
+
+    select.value = '2';
+    select.dispatchEvent(new Event('change'));
+    expect(taskService.findAll).toHaveBeenLastCalledWith(2);
+
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    expect(taskService.findAll).toHaveBeenLastCalledWith(null);
   });
 
   it('should pass categories and the active filter to the creation dialog', async () => {
@@ -130,6 +143,6 @@ describe('TaskListPage', () => {
     const { element, notifier } = await render();
 
     expect(notifier.error).toHaveBeenCalledWith(error);
-    expect(element.querySelector('mat-progress-bar')).toBeNull();
+    expect(element.querySelector('.spinner-border')).toBeNull();
   });
 });

@@ -3,7 +3,7 @@
 A todo list application, made of two parts:
 
 - **`backend/`**: a REST API for **categories**, **tasks** and **users**, secured with **JWT** authentication. Built with Spring Boot 4, Java 21 and PostgreSQL, and tested with JUnit (written test-first).
-- **`frontend/`**: an Angular 22 single-page application with Angular Material, covering the whole API, including user administration.
+- **`frontend/`**: an Angular 22 single-page application styled with Bootstrap 5, covering the whole API, including user administration.
 
 Both run in Docker containers, orchestrated by Docker Compose.
 
@@ -41,7 +41,7 @@ Each part has its own developer guide: [`backend/README.md`](backend/README.md) 
 | Boilerplate       | Lombok                                                            |
 | Backend build     | Gradle 9 (Kotlin DSL) with the Gradle Wrapper                     |
 | Frontend          | Angular 22 (standalone components, signals, zoneless), TypeScript 6 |
-| UI components     | Angular Material 22 (Material 3)                                  |
+| UI                | Bootstrap 5.3 (CSS), with the Angular CDK for modals              |
 | Frontend tests    | Vitest 5 with jsdom (Angular CLI unit-test builder)               |
 | Web server        | nginx (serves the frontend and proxies `/api` to the backend)     |
 | Containers        | Docker (multi-stage builds) + Docker Compose                      |
@@ -389,14 +389,14 @@ The Angular application lives in [`frontend/`](frontend). Its interface is in Fr
 | `/profile`     | Logged-in users        | Edit your first name, last name, email and password.                                             |
 | `/admin/users` | Admins only            | List users, create users, edit their details and roles, delete users (except your own account).  |
 
-The site opens on the login form: `/` and unknown routes redirect to `/login`, and a user who is already logged in is sent on to `/tasks`. On small screens, secondary table columns are hidden and their content is shown under the main column, so the action buttons stay visible.
+The site opens on the login form: `/` and unknown routes redirect to `/login`, and a user who is already logged in is sent on to `/tasks`. Before login, the navbar shows only the app name, with no links and no user menu. The interface uses Bootstrap 5: dark navbar, cards, forms, tables, modals and toasts. On small screens, the navbar links fold behind a toggler and tables scroll horizontally.
 
 ### How it works
 
 - **Authentication**: `AuthService` stores the JWT in `localStorage` and decodes its payload to get the username, the roles and the expiry date. The front never checks the signature: the backend does that on every request. The UI only uses the decoded payload to adapt itself, for example to show the admin menu.
 - **HTTP interceptor**: `authInterceptor` adds `Authorization: Bearer <token>` to every `/api` call except `/api/auth/**`. If the backend answers 401 to an authenticated call (expired token, deleted account), it logs the user out and redirects to `/login`.
 - **Guards**: `authGuard` protects the application pages, `adminGuard` protects `/admin/users`, and `guestGuard` sends logged-in users away from `/login` and `/register`. They only improve the user experience: the backend enforces the real access rules.
-- **Errors**: API errors are shown in a snackbar, using the `message` field of the backend's `ApiError` body.
+- **Errors**: API errors are shown in a Bootstrap toast, using the `message` field of the backend's `ApiError` body.
 - **Same origin**: the browser only talks to the frontend's origin. In Docker, nginx forwards `/api` to the `backend` service; with `npm start`, the Angular dev server does the same through `proxy.conf.json`. No CORS configuration is needed.
 
 > [!NOTE]
@@ -410,18 +410,18 @@ frontend/
 ├── proxy.conf.json                 Dev server proxy: /api → http://localhost:8080
 └── src/
     ├── app/
-    │   ├── app.ts, app.html        Shell: toolbar, navigation, user menu
-    │   ├── app.config.ts           Providers: router, HTTP client + interceptor, French locale, icons
+    │   ├── app.ts, app.html        Shell: navbar, user menu, toasts
+    │   ├── app.config.ts           Providers: router, HTTP client + interceptor, French locale
     │   ├── app.routes.ts           Lazy-loaded routes and their guards
     │   ├── core/
     │   │   ├── models.ts           TypeScript mirror of the backend DTOs
-    │   │   ├── notifier.ts         Snackbar notifications and API error messages
+    │   │   ├── notifier.ts         Toast notifications and API error messages
     │   │   ├── auth/               AuthService, interceptor, guards
     │   │   └── api/                CategoryService, TaskService, UserService
     │   ├── features/               One folder per screen: auth, tasks, categories, profile, admin
-    │   └── shared/                 Confirmation dialog, form helpers, role label pipe
+    │   └── shared/                 Confirmation dialog, spinner, form helpers, role label pipe
     ├── testing/                    Test helpers (fake JWT)
-    └── styles.scss                 Material theme (follows the system light/dark mode) and shared styles
+    └── styles.scss                 Modal (CDK overlay) styles and a few additions to Bootstrap
 ```
 
 ---
@@ -455,7 +455,7 @@ The HTML report is written to `backend/build/reports/tests/test/index.html`.
 
 ### Frontend tests
 
-About 115 unit tests run with Vitest in a jsdom environment. No browser is needed:
+About 130 unit tests run with Vitest in a jsdom environment. No browser is needed:
 
 ```bash
 cd frontend
@@ -467,15 +467,15 @@ Every source file has tests:
 | Area        | What is tested                                                                                     |
 |-------------|----------------------------------------------------------------------------------------------------|
 | Routing     | Each route loads the right page behind the right guard; only `/login` and `/register` are public    |
-| App config  | French locale, icon font, and the interceptor registered on the HTTP client                        |
+| App config  | French locale and the interceptor registered on the HTTP client                                    |
 | `core/auth` | Token decoding and expiry, login and logout, the interceptor (header, 401 handling), the three guards |
 | `core/api`  | URL, method and body of every API call                                                             |
-| `core`      | Error message extraction and snackbar notifications                                                |
+| `core`      | Error message extraction and toast notifications                                                   |
 | Pages       | Loading and sorting, create, edit and delete flows through dialogs, confirmation, API errors (including the 409 on categories), form validation, self-deletion blocked for admins |
 | Dialogs     | Form prefill, validation and the request each dialog returns                                       |
 | `shared`    | Form helpers, role labels and the confirmation dialog                                              |
 
-The page tests replace the API services, `MatDialog` and the notifier with test doubles from `src/testing/`.
+The page tests replace the API services, the CDK `Dialog` and the notifier with test doubles from `src/testing/`.
 
 ---
 

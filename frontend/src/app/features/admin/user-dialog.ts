@@ -1,13 +1,9 @@
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { Component, inject } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 
 import { ROLES, Role, User, UserCreateRequest, UserUpdateRequest } from '../../core/models';
-import { emptyToNull } from '../../shared/forms';
+import { emptyToNull, showError } from '../../shared/forms';
 import { RoleLabelPipe } from '../../shared/role-label.pipe';
 
 export type UserDialogResult =
@@ -21,87 +17,94 @@ export type UserDialogResult =
  */
 @Component({
   selector: 'app-user-dialog',
-  imports: [
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCheckboxModule,
-    MatButtonModule,
-    RoleLabelPipe,
-  ],
+  imports: [ReactiveFormsModule, RoleLabelPipe],
   template: `
-    <h2 mat-dialog-title>{{ user ? 'Modifier ' + user.username : 'Nouvel utilisateur' }}</h2>
-    <form [formGroup]="form" (ngSubmit)="save()">
-      <mat-dialog-content class="form-fields">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">{{ user ? 'Modifier ' + user.username : 'Nouvel utilisateur' }}</h2>
+      </div>
+      <div class="modal-body">
         @if (!user) {
-          <mat-form-field>
-            <mat-label>Nom d'utilisateur</mat-label>
-            <input matInput formControlName="username" required cdkFocusInitial />
-            <mat-hint>3 à 50 caractères</mat-hint>
-          </mat-form-field>
+          <div class="mb-3">
+            <label class="form-label" for="user-username">Nom d'utilisateur</label>
+            <input
+              id="user-username"
+              class="form-control"
+              formControlName="username"
+              required
+              cdkFocusInitial
+              [class.is-invalid]="showError(form.controls.username)"
+            />
+            <div class="invalid-feedback">Entre 3 et 50 caractères.</div>
+          </div>
         }
-        <mat-form-field>
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" [required]="!user" />
-          @if (form.controls.email.hasError('email')) {
-            <mat-error>Adresse email invalide</mat-error>
-          }
-        </mat-form-field>
-        <div class="form-row">
-          <mat-form-field>
-            <mat-label>Prénom</mat-label>
-            <input matInput formControlName="firstname" />
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Nom</mat-label>
-            <input matInput formControlName="lastname" />
-          </mat-form-field>
+        <div class="mb-3">
+          <label class="form-label" for="user-email">Email</label>
+          <input
+            id="user-email"
+            class="form-control"
+            type="email"
+            formControlName="email"
+            [required]="!user"
+            [class.is-invalid]="showError(form.controls.email)"
+          />
+          <div class="invalid-feedback">Adresse email invalide.</div>
         </div>
-        <mat-form-field>
-          <mat-label>{{ user ? 'Nouveau mot de passe' : 'Mot de passe' }}</mat-label>
-          <input matInput type="password" formControlName="password" autocomplete="new-password" [required]="!user" />
-          <mat-hint>{{ user ? 'Laisser vide pour le conserver' : '8 caractères minimum' }}</mat-hint>
-        </mat-form-field>
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">
+            <label class="form-label" for="user-firstname">Prénom</label>
+            <input id="user-firstname" class="form-control" formControlName="firstname" />
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label" for="user-lastname">Nom</label>
+            <input id="user-lastname" class="form-control" formControlName="lastname" />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="user-password">{{ user ? 'Nouveau mot de passe' : 'Mot de passe' }}</label>
+          <input
+            id="user-password"
+            class="form-control"
+            type="password"
+            formControlName="password"
+            autocomplete="new-password"
+            [required]="!user"
+            [class.is-invalid]="showError(form.controls.password)"
+          />
+          <div class="invalid-feedback">8 caractères minimum.</div>
+          <div class="form-text">{{ user ? 'Laisser vide pour le conserver.' : '8 caractères minimum.' }}</div>
+        </div>
 
         @if (user) {
-          <fieldset class="roles" formGroupName="roles">
-            <legend>Rôles</legend>
+          <fieldset formGroupName="roles">
+            <legend class="form-label fs-6">Rôles</legend>
             @for (role of roles; track role) {
-              <mat-checkbox [formControlName]="role">{{ role | roleLabel }}</mat-checkbox>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" [id]="'user-role-' + role" [formControlName]="role" />
+                <label class="form-check-label" [for]="'user-role-' + role">{{ role | roleLabel }}</label>
+              </div>
             }
             @if (form.controls.roles.hasError('noRole')) {
-              <p class="form-error">Au moins un rôle est requis.</p>
+              <div class="text-danger small mt-1">Au moins un rôle est requis.</div>
             }
           </fieldset>
         } @else {
-          <p class="muted">Le compte est créé avec le rôle Utilisateur ; les rôles se modifient ensuite.</p>
+          <p class="text-body-secondary small mb-0">
+            Le compte est créé avec le rôle Utilisateur ; les rôles se modifient ensuite.
+          </p>
         }
-      </mat-dialog-content>
-      <mat-dialog-actions align="end">
-        <button mat-button type="button" mat-dialog-close>Annuler</button>
-        <button mat-flat-button type="submit">Enregistrer</button>
-      </mat-dialog-actions>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="dialogRef.close()">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
     </form>
-  `,
-  styles: `
-    .roles {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 16px;
-      border: none;
-      padding: 0;
-      margin: 8px 0 0;
-    }
-    legend {
-      font: var(--mat-sys-title-small);
-      margin-bottom: 4px;
-    }
   `,
 })
 export class UserDialog {
-  protected readonly user = inject<User | null>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject<MatDialogRef<UserDialog, UserDialogResult>>(MatDialogRef);
+  protected readonly user = inject<User | null>(DIALOG_DATA);
+  protected readonly dialogRef = inject<DialogRef<UserDialogResult>>(DialogRef);
+  protected readonly showError = showError;
   protected readonly roles = ROLES;
 
   private readonly fb = inject(NonNullableFormBuilder);

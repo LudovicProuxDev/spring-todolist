@@ -29,8 +29,8 @@ This file is the developer guide for the `frontend/` folder. For the API it call
 |---------------|------------------------------------------------------------------|
 | Framework     | Angular 22: standalone components, signals, zoneless change detection |
 | Language      | TypeScript 6 (strict mode)                                       |
-| UI components | Angular Material 22 and the CDK (Material 3 theme)               |
-| Icons         | Material Symbols Outlined (Google Fonts)                          |
+| UI            | Bootstrap 5.3 (CSS only, no Bootstrap JavaScript)                |
+| Modals        | `Dialog` from the Angular CDK (overlay, focus trap, Escape key), unstyled |
 | HTTP          | `HttpClient` with a functional interceptor                       |
 | Forms         | Typed reactive forms (`NonNullableFormBuilder`)                  |
 | Tests         | Vitest 5 with jsdom, through the Angular CLI `unit-test` builder |
@@ -86,7 +86,7 @@ The interface is in French.
 
 The site opens on the login form: `/` and any unknown route redirect to `/login`. A user who is already logged in is sent on to `/tasks` by `guestGuard`, and lands there after logging in or registering. Each route sets the page title.
 
-The shell ([`app.ts`](src/app/app.ts) and [`app.html`](src/app/app.html)) shows a toolbar with the navigation links and a user menu (profile, logout). It shows the **Utilisateurs** link to admins only.
+The shell ([`app.ts`](src/app/app.ts) and [`app.html`](src/app/app.html)) shows a dark Bootstrap navbar. Before login, it contains only the app name. Once logged in, it also shows the navigation links, the **Utilisateurs** link for admins only, and a user dropdown menu (profile, logout). On small screens, the links fold behind the navbar toggler.
 
 ---
 
@@ -105,19 +105,19 @@ frontend/
 ├── tsconfig.spec.json       Tests (includes src/testing)
 ├── public/                  Static files copied as is (favicon)
 └── src/
-    ├── index.html           lang="fr", Roboto and Material Symbols fonts
+    ├── index.html           lang="fr"
     ├── main.ts              bootstrapApplication(App, appConfig)
-    ├── styles.scss          Material theme and shared styles
+    ├── styles.scss          CDK overlay styles and a few additions to Bootstrap
     ├── testing/             Test helpers, never bundled in the app
     │   ├── mocks.ts         dialogMock(), notifierMock()
     │   └── tokens.ts        fakeToken()
     └── app/
-        ├── app.ts, app.html, app.scss   Shell: toolbar, navigation, user menu
+        ├── app.ts, app.html   Shell: navbar, user menu, toasts
         ├── app.config.ts    Global providers
         ├── app.routes.ts    Lazy-loaded routes and guards
         ├── core/            Singletons used everywhere
         │   ├── models.ts           TypeScript mirror of the backend DTOs
-        │   ├── notifier.ts         Snackbar messages, errorMessage()
+        │   ├── notifier.ts         Notifier, Toasts component, errorMessage()
         │   ├── api/api.services.ts CategoryService, TaskService, UserService
         │   └── auth/               AuthService, authInterceptor, guards
         ├── features/        One folder per screen
@@ -128,11 +128,12 @@ frontend/
         │   └── admin/              user-list-page, user-dialog
         └── shared/          Reusable pieces with no state
             ├── confirm-dialog.ts   ConfirmDialog + confirm() helper
-            ├── forms.ts            emptyToNull(), hexColorValidator
+            ├── spinner.ts          Loading indicator
+            ├── forms.ts            emptyToNull(), hexColorValidator, showError()
             └── role-label.pipe.ts  ROLE_ADMIN → "Administrateur"
 ```
 
-Every `.ts` file under `src/app` has a `.spec.ts` file next to it. The exceptions are `models.ts`, which contains only types, and `shared/`, whose three files are tested together in `forms.spec.ts` and `shared.spec.ts`.
+Every `.ts` file under `src/app` has a `.spec.ts` file next to it. The exceptions are `models.ts`, which contains only types, and `shared/`, whose files are tested together in `forms.spec.ts` and `shared.spec.ts`.
 
 ---
 
@@ -144,15 +145,14 @@ Every `.ts` file under `src/app` has a `.spec.ts` file next to it. The exception
 
 - the router, with the routes from `app.routes.ts`;
 - `HttpClient`, with `authInterceptor`;
-- the `fr-FR` locale, used for dates by the `date` pipe;
-- an app initializer that makes `<mat-icon>` use the `material-symbols-outlined` font.
+- the `fr-FR` locale, used for dates by the `date` pipe.
 
 There is no `zone.js`: the app is **zoneless**, and change detection is driven by signals and events.
 
 ### Components
 
 - Every component is **standalone** and declares its own `imports`.
-- Pages and dialogs have **inline templates**. Their styles come from `styles.scss`, and only the shell has its own `.scss` file.
+- Pages and dialogs have **inline templates** written with Bootstrap classes. No component has its own stylesheet.
 - Pages are **lazy-loaded** with `loadComponent`, so each one is a separate chunk.
 - State is kept in **signals** (`signal`, `computed`). Templates use the built-in control flow (`@if`, `@for`).
 - Dependencies are injected with `inject()`, not with constructor parameters.
@@ -168,13 +168,13 @@ Page ──open()──► Dialog (form)
   └── load() ◄── Service.create/update ──► Notifier.success / Notifier.error
 ```
 
-1. The page calls `MatDialog.open(XxxDialog, { data })`. `data` is `null` to create, or the item to edit.
-2. The dialog builds a typed reactive form, validates it, and closes with a **request object** that is ready to send. It never calls the API itself.
-3. The page filters out a cancelled dialog, calls the service, shows a snackbar, and reloads the list.
+1. The page calls `Dialog.open(XxxDialog, { data })` (Angular CDK). `data` is `null` to create, or the item to edit. The dialog's template is a Bootstrap `.modal-content`, with its header, body and footer.
+2. The dialog builds a typed reactive form, validates it, and closes with `DialogRef.close(request)`, passing a **request object** that is ready to send. It never calls the API itself.
+3. The page reads the result from `DialogRef.closed`, filters out a cancelled dialog, calls the service, shows a toast, and reloads the list.
 
 Deletion goes through `confirm(dialog, {...})` from `shared/confirm-dialog.ts`, which emits `true` only if the user confirms.
 
-Because dialogs only return data, they are easy to test on their own, and pages can be tested with a fake `MatDialog`.
+Because dialogs only return data, they are easy to test on their own, and pages can be tested with a fake `Dialog`.
 
 ### Authentication
 
@@ -233,7 +233,7 @@ Login and registration are in `AuthService`.
 
 ### Errors
 
-[`Notifier`](src/app/core/notifier.ts) shows snackbars. `Notifier.error(error)` displays:
+[`Notifier`](src/app/core/notifier.ts) keeps a list of notifications in a signal. The `Toasts` component, placed once in the shell, displays them as Bootstrap toasts in the bottom-right corner: green for successes (closed after 3 s), red for errors (closed after 6 s), each with a close button. `Notifier.error(error)` displays:
 
 1. the `message` field of the backend's `ApiError` body, when there is one;
 2. otherwise, for status `0` (network error), « Serveur injoignable. Vérifiez que le backend est démarré. »;
@@ -247,10 +247,21 @@ Forms repeat the backend's rules so users get immediate feedback: required field
 
 ## Styling and accessibility
 
-- [`styles.scss`](src/styles.scss) defines the Material 3 theme with `color-scheme: light dark`, so the app follows the system's light or dark mode.
-- Shared classes are used by every page: `.page-header`, `.surface-list`, `.table-wrapper`, `.row-actions`, `.empty`, `.danger`, `.snack-error`.
-- **Small screens**: below the mobile breakpoint, secondary table columns (created date, category, name, email, roles) are hidden. Their content is shown under the main column through `.small-screen-only` elements, so the action buttons stay visible without horizontal scrolling.
-- Icon-only buttons have an `aria-label` and a `matTooltip`.
+The interface is built with **Bootstrap 5.3**. Its stylesheet (`bootstrap.min.css`) is declared in the `styles` of `angular.json`. The Bootstrap JavaScript is not used: the few interactive parts are handled by Angular.
+
+- **Layout**: `.container`, the grid (`.row`, `.col-*`) and utility classes (`d-flex`, `gap-*`, `mb-*`…).
+- **Components used**: navbar with dropdown, cards, forms (`.form-control`, `.form-select`, `.form-check`, `.input-group`), tables (`.table .table-hover`), `.list-group`, badges, buttons, alerts, spinners, toasts and modals (`.modal-content`).
+- **Interactive parts without Bootstrap JS**: the navbar toggler and the user dropdown are opened and closed with signals in `App` (a click outside closes the dropdown); toasts are driven by `Notifier`; modals are opened by the CDK `Dialog`.
+- **Form validation**: a field gets the `is-invalid` class, which shows its `.invalid-feedback` message, once it is invalid and has been touched or modified (`showError()` in `shared/forms.ts`). Submitting marks every field as touched.
+- [`styles.scss`](src/styles.scss) only adds what Bootstrap needs to work without its JavaScript, plus two details:
+  - the CDK overlay styles (backdrop and positioning of the modals);
+  - the `--bs-modal-*` variables, which Bootstrap declares on `.modal`, a class the CDK container does not have;
+  - `position: relative` on `.table-responsive`, so the hidden « Actions » header does not widen the page on small screens;
+  - a fixed width for the colour picker inside an `.input-group`;
+  - the category colour swatch and the line breaks of task descriptions.
+- **Before login**, the navbar shows the app name only: no links and no user menu. The shell checks `isAuthenticated()`, and `AuthService` drops an expired or unreadable token as soon as the app starts.
+- **Small screens**: the navbar links fold behind the toggler, and tables scroll horizontally inside `.table-responsive`.
+- Fields have a `<label for>`, spinners and the actions column have `.visually-hidden` text, and error toasts use `role="alert"`.
 - `index.html` sets `lang="fr"`.
 
 The production build fails if the initial bundle exceeds 1 MB, and warns above 700 kB (`angular.json` budgets).
@@ -259,7 +270,7 @@ The production build fails if the initial bundle exceeds 1 MB, and warns above 7
 
 ## Tests
 
-There are about **115 unit tests** in 19 spec files (`it.each` cases count separately). They run in Node with jsdom, so no browser is needed:
+There are about **130 unit tests** in 19 spec files (`it.each` cases count separately). They run in Node with jsdom, so no browser is needed:
 
 ```bash
 cd frontend
@@ -273,21 +284,21 @@ npx ng test --watch=false
 | Area        | Spec files | What they check |
 |-------------|------------|-----------------|
 | Routing     | `app.routes.spec.ts` | Each route loads the right component behind the right guard, and only `/login` and `/register` are public |
-| App config  | `app.config.spec.ts` | French locale, icon font, interceptor registered |
-| Shell       | `app.spec.ts` | Navigation and user menu depending on login state and role |
+| App config  | `app.config.spec.ts` | French locale, interceptor registered |
+| Shell       | `app.spec.ts` | Navbar content depending on login state and role, dropdown and toggler opening and closing, logout, toasts displayed |
 | Auth        | `auth.service.spec.ts`, `auth.interceptor.spec.ts`, `auth.guards.spec.ts` | Token decoding and expiry, login and logout, the header and 401 handling, every guard branch |
 | API         | `api.services.spec.ts` | URL, method, query parameters and body of every call (`HttpTestingController`) |
-| Notifier    | `notifier.spec.ts` | Error message extraction, snackbar options |
+| Notifier    | `notifier.spec.ts` | Error message extraction, toast lifetimes, stacking and closing, Bootstrap colours |
 | Pages       | `*-page.spec.ts` | Loading and sorting, empty states, create, edit and delete flows, confirmation refused, API errors (including the 409 on categories), form validation |
 | Dialogs     | `*-dialog.spec.ts` | Prefill in edit mode, validation, the exact request returned on save |
-| Shared      | `forms.spec.ts`, `shared.spec.ts` | `emptyToNull`, colour pattern, role labels, confirmation dialog |
+| Shared      | `forms.spec.ts`, `shared.spec.ts` | `emptyToNull`, colour pattern, `showError`, role labels, confirmation dialog, spinner |
 
 ### Test helpers
 
 Located in [`src/testing/`](src/testing). `tsconfig.app.json` excludes this folder, so it never reaches the production bundle.
 
 - `fakeToken(username, roles?, expiresInSeconds?)` builds an unsigned JWT with the same payload as the backend's. A negative `expiresInSeconds` gives an expired token.
-- `dialogMock(...results)` replaces `MatDialog`. Each `open()` call returns the next value from `results` when the dialog closes; `undefined` means cancelled. A single test can therefore cover several dialogs in sequence, for example the edit form followed by a confirmation.
+- `dialogMock(...results)` replaces the CDK `Dialog`. Each `open()` call returns the next value from `results` when the dialog closes; `undefined` means cancelled. A single test can therefore cover several dialogs in sequence, for example the edit form followed by a confirmation.
 - `notifierMock()` replaces `Notifier` with `vi.fn()` spies.
 
 A typical page test:
@@ -322,7 +333,7 @@ For example, a `tags` screen backed by a new `/api/tags` endpoint:
 
 1. **Model**: add `Tag` and `TagRequest` to `core/models.ts`, matching the backend DTOs.
 2. **Service**: add `TagService` to `core/api/api.services.ts`, with a test in `api.services.spec.ts`.
-3. **Dialog**: create `features/tags/tag-dialog.ts`. It receives `Tag | null` through `MAT_DIALOG_DATA` and closes with a `TagRequest`. Test the prefill, the validation and the returned request.
+3. **Dialog**: create `features/tags/tag-dialog.ts`. It receives `Tag | null` through `DIALOG_DATA`, uses the `.modal-content` markup, and closes with `DialogRef.close(request)`. Test the prefill, the validation and the returned request.
 4. **Page**: create `features/tags/tag-list-page.ts` with the `load()`, `openDialog()` and `remove()` pattern described above. Test it with `dialogMock()` and `notifierMock()`.
 5. **Route**: add a lazy route with the right guard in `app.routes.ts`, and a case in `app.routes.spec.ts`.
 6. **Navigation**: add a link in `app.html`, and update `app.spec.ts`.

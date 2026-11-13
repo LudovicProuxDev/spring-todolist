@@ -1,54 +1,63 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { errorMessage } from '../../core/notifier';
+import { showError } from '../../shared/forms';
 
 @Component({
   selector: 'app-login-page',
-  imports: [
-    ReactiveFormsModule,
-    RouterLink,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatProgressBarModule,
-  ],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <mat-card class="auth-card">
-      @if (loading()) {
-        <mat-progress-bar mode="indeterminate" />
-      }
-      <mat-card-header>
-        <mat-card-title>Connexion</mat-card-title>
-      </mat-card-header>
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <mat-card-content class="form-fields">
-          <mat-form-field>
-            <mat-label>Nom d'utilisateur</mat-label>
-            <input matInput formControlName="username" autocomplete="username" required />
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Mot de passe</mat-label>
-            <input matInput type="password" formControlName="password" autocomplete="current-password" required />
-          </mat-form-field>
-          @if (error(); as message) {
-            <p class="form-error" role="alert">{{ message }}</p>
-          }
-        </mat-card-content>
-        <mat-card-actions class="auth-actions">
-          <a mat-button routerLink="/register">Créer un compte</a>
-          <button mat-flat-button type="submit" [disabled]="loading()">Se connecter</button>
-        </mat-card-actions>
-      </form>
-    </mat-card>
+    <div class="row justify-content-center">
+      <div class="col-sm-10 col-md-7 col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h1 class="card-title h4 mb-4">Connexion</h1>
+            <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+              <div class="mb-3">
+                <label class="form-label" for="login-username">Nom d'utilisateur</label>
+                <input
+                  id="login-username"
+                  class="form-control"
+                  formControlName="username"
+                  autocomplete="username"
+                  required
+                  [class.is-invalid]="showError(form.controls.username)"
+                />
+                <div class="invalid-feedback">Le nom d'utilisateur est obligatoire.</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="login-password">Mot de passe</label>
+                <input
+                  id="login-password"
+                  class="form-control"
+                  type="password"
+                  formControlName="password"
+                  autocomplete="current-password"
+                  required
+                  [class.is-invalid]="showError(form.controls.password)"
+                />
+                <div class="invalid-feedback">Le mot de passe est obligatoire.</div>
+              </div>
+              @if (error(); as message) {
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
+              }
+              <div class="d-flex justify-content-between align-items-center">
+                <a routerLink="/register">Créer un compte</a>
+                <button class="btn btn-primary" type="submit" [disabled]="loading()">
+                  @if (loading()) {
+                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                  }
+                  Se connecter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   `,
 })
 export class LoginPage {
@@ -61,6 +70,7 @@ export class LoginPage {
   });
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly showError = showError;
 
   submit(): void {
     if (this.form.invalid) {

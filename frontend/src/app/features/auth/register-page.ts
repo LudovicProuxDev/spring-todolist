@@ -1,75 +1,89 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { errorMessage } from '../../core/notifier';
-import { emptyToNull } from '../../shared/forms';
+import { emptyToNull, showError } from '../../shared/forms';
 
 @Component({
   selector: 'app-register-page',
-  imports: [
-    ReactiveFormsModule,
-    RouterLink,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatProgressBarModule,
-  ],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <mat-card class="auth-card">
-      @if (loading()) {
-        <mat-progress-bar mode="indeterminate" />
-      }
-      <mat-card-header>
-        <mat-card-title>Créer un compte</mat-card-title>
-      </mat-card-header>
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <mat-card-content class="form-fields">
-          <mat-form-field>
-            <mat-label>Nom d'utilisateur</mat-label>
-            <input matInput formControlName="username" autocomplete="username" required />
-            <mat-hint>3 à 50 caractères</mat-hint>
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Email</mat-label>
-            <input matInput type="email" formControlName="email" autocomplete="email" required />
-            @if (form.controls.email.hasError('email')) {
-              <mat-error>Adresse email invalide</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Mot de passe</mat-label>
-            <input matInput type="password" formControlName="password" autocomplete="new-password" required />
-            <mat-hint>8 caractères minimum</mat-hint>
-          </mat-form-field>
-          <div class="form-row">
-            <mat-form-field>
-              <mat-label>Prénom</mat-label>
-              <input matInput formControlName="firstname" autocomplete="given-name" />
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Nom</mat-label>
-              <input matInput formControlName="lastname" autocomplete="family-name" />
-            </mat-form-field>
+    <div class="row justify-content-center">
+      <div class="col-sm-10 col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h1 class="card-title h4 mb-4">Créer un compte</h1>
+            <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+              <div class="mb-3">
+                <label class="form-label" for="register-username">Nom d'utilisateur</label>
+                <input
+                  id="register-username"
+                  class="form-control"
+                  formControlName="username"
+                  autocomplete="username"
+                  required
+                  [class.is-invalid]="showError(form.controls.username)"
+                />
+                <div class="invalid-feedback">Entre 3 et 50 caractères.</div>
+                <div class="form-text">3 à 50 caractères.</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="register-email">Email</label>
+                <input
+                  id="register-email"
+                  class="form-control"
+                  type="email"
+                  formControlName="email"
+                  autocomplete="email"
+                  required
+                  [class.is-invalid]="showError(form.controls.email)"
+                />
+                <div class="invalid-feedback">Adresse email invalide.</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="register-password">Mot de passe</label>
+                <input
+                  id="register-password"
+                  class="form-control"
+                  type="password"
+                  formControlName="password"
+                  autocomplete="new-password"
+                  required
+                  [class.is-invalid]="showError(form.controls.password)"
+                />
+                <div class="invalid-feedback">8 caractères minimum.</div>
+                <div class="form-text">8 caractères minimum.</div>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                  <label class="form-label" for="register-firstname">Prénom</label>
+                  <input id="register-firstname" class="form-control" formControlName="firstname" autocomplete="given-name" />
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label" for="register-lastname">Nom</label>
+                  <input id="register-lastname" class="form-control" formControlName="lastname" autocomplete="family-name" />
+                </div>
+              </div>
+              @if (error(); as message) {
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
+              }
+              <div class="d-flex justify-content-between align-items-center">
+                <a routerLink="/login">J'ai déjà un compte</a>
+                <button class="btn btn-primary" type="submit" [disabled]="loading()">
+                  @if (loading()) {
+                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                  }
+                  Créer le compte
+                </button>
+              </div>
+            </form>
           </div>
-          @if (error(); as message) {
-            <p class="form-error" role="alert">{{ message }}</p>
-          }
-        </mat-card-content>
-        <mat-card-actions class="auth-actions">
-          <a mat-button routerLink="/login">J'ai déjà un compte</a>
-          <button mat-flat-button type="submit" [disabled]="loading()">Créer le compte</button>
-        </mat-card-actions>
-      </form>
-    </mat-card>
+        </div>
+      </div>
+    </div>
   `,
 })
 export class RegisterPage {
@@ -85,6 +99,7 @@ export class RegisterPage {
   });
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly showError = showError;
 
   submit(): void {
     if (this.form.invalid) {

@@ -37,7 +37,7 @@ describe('CategoryListPage', () => {
   it('should list categories sorted by label, with their colour', async () => {
     const { element } = await render();
 
-    const titles = Array.from(element.querySelectorAll('[matListItemTitle]')).map((e) => e.textContent!.trim());
+    const titles = Array.from(element.querySelectorAll('.category-label')).map((e) => e.textContent!.trim());
     expect(titles).toEqual(['Maison', 'Travail']);
     expect(element.textContent).toContain('Sans couleur');
     expect(element.textContent).toContain('#3366FF');
@@ -95,6 +95,6 @@ describe('CategoryListPage', () => {
     const { element, notifier } = await render();
 
     expect(notifier.error).toHaveBeenCalledWith(error);
-    expect(element.querySelector('mat-progress-bar')).toBeNull();
+    expect(element.querySelector('.spinner-border')).toBeNull();
   });
 });

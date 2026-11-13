@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationInitStatus, LOCALE_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MatIconRegistry } from '@angular/material/icon';
 
 import { fakeToken } from '../testing/tokens';
 import { appConfig } from './app.config';
@@ -19,10 +18,6 @@ describe('appConfig', () => {
 
   it('should use the French locale', () => {
     expect(TestBed.inject(LOCALE_ID)).toBe('fr-FR');
-  });
-
-  it('should make <mat-icon> use the Material Symbols font loaded by index.html', () => {
-    expect(TestBed.inject(MatIconRegistry).getDefaultFontSetClass()).toContain('material-symbols-outlined');
   });
 
   it('should register the auth interceptor on the HTTP client', () => {

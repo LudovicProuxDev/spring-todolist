@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
-import { Notifier, errorMessage } from './notifier';
+import { ERROR_DURATION_MS, Notifier, SUCCESS_DURATION_MS, Toasts, errorMessage } from './notifier';
 
 describe('errorMessage', () => {
   it('should use the message of the ApiError body', () => {
@@ -27,24 +26,75 @@ describe('errorMessage', () => {
 });
 
 describe('Notifier', () => {
-  let open: ReturnType<typeof vi.fn>;
+  let notifier: Notifier;
 
   beforeEach(() => {
-    open = vi.fn();
-    TestBed.configureTestingModule({ providers: [{ provide: MatSnackBar, useValue: { open } }] });
+    vi.useFakeTimers();
+    notifier = TestBed.inject(Notifier);
   });
 
-  it('should show success messages briefly', () => {
-    TestBed.inject(Notifier).success('Tâche créée');
+  afterEach(() => vi.useRealTimers());
 
-    expect(open).toHaveBeenCalledWith('Tâche créée', 'OK', { duration: 3000 });
+  it('should show a success message, then hide it after a short delay', () => {
+    notifier.success('Tâche créée');
+
+    expect(notifier.toasts()).toEqual([{ id: 1, kind: 'success', message: 'Tâche créée' }]);
+
+    vi.advanceTimersByTime(SUCCESS_DURATION_MS);
+    expect(notifier.toasts()).toEqual([]);
   });
 
-  it('should show errors longer, with the error style and the API message', () => {
-    const error = new HttpErrorResponse({ status: 409, error: { message: 'Catégorie utilisée' } });
+  it('should show errors longer, with the API message', () => {
+    notifier.error(new HttpErrorResponse({ status: 409, error: { message: 'Catégorie utilisée' } }));
 
-    TestBed.inject(Notifier).error(error);
+    expect(notifier.toasts()).toEqual([{ id: 1, kind: 'error', message: 'Catégorie utilisée' }]);
 
-    expect(open).toHaveBeenCalledWith('Catégorie utilisée', 'Fermer', { duration: 6000, panelClass: 'snack-error' });
+    vi.advanceTimersByTime(SUCCESS_DURATION_MS);
+    expect(notifier.toasts()).toHaveLength(1);
+
+    vi.advanceTimersByTime(ERROR_DURATION_MS - SUCCESS_DURATION_MS);
+    expect(notifier.toasts()).toEqual([]);
+  });
+
+  it('should stack messages and dismiss one on demand', () => {
+    notifier.success('Un');
+    notifier.success('Deux');
+
+    notifier.dismiss(1);
+
+    expect(notifier.toasts().map((toast) => toast.message)).toEqual(['Deux']);
+  });
+});
+
+describe('Toasts', () => {
+  async function render() {
+    const fixture = TestBed.createComponent(Toasts);
+    await fixture.whenStable();
+    return { fixture, element: fixture.nativeElement as HTMLElement, notifier: TestBed.inject(Notifier) };
+  }
+
+  it('should render success and error toasts with the Bootstrap colours', async () => {
+    const { fixture, element, notifier } = await render();
+
+    notifier.success('Enregistré');
+    notifier.error(new Error('boom'));
+    await fixture.whenStable();
+
+    const toasts = Array.from(element.querySelectorAll('.toast'));
+    expect(toasts.map((toast) => toast.textContent!.trim())).toEqual(['Enregistré', 'Une erreur inattendue est survenue.']);
+    expect(toasts[0].classList).toContain('text-bg-success');
+    expect(toasts[1].classList).toContain('text-bg-danger');
+    expect(toasts[1].getAttribute('role')).toBe('alert');
+  });
+
+  it('should close a toast with its close button', async () => {
+    const { fixture, element, notifier } = await render();
+    notifier.success('Enregistré');
+    await fixture.whenStable();
+
+    element.querySelector<HTMLButtonElement>('.btn-close')!.click();
+    await fixture.whenStable();
+
+    expect(element.querySelector('.toast')).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { Validators } from '@angular/forms';
+import { AbstractControl, Validators } from '@angular/forms';
 
 /** Le backend attend null (et non "") pour un champ optionnel laisse vide. */
 export function emptyToNull(value: string | null | undefined): string | null {
@@ -10,3 +10,8 @@ export function emptyToNull(value: string | null | undefined): string | null {
 export const HEX_COLOR_PATTERN = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
 
 export const hexColorValidator = Validators.pattern(HEX_COLOR_PATTERN);
+
+/** Afficher l'erreur d'un champ (classe Bootstrap is-invalid) une fois qu'il a ete touche ou modifie. */
+export function showError(control: AbstractControl): boolean {
+  return control.invalid && (control.touched || control.dirty);
+}

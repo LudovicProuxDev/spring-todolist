@@ -40,7 +40,7 @@ describe('UserListPage', () => {
   }
 
   function rows(element: HTMLElement): HTMLElement[] {
-    return Array.from(element.querySelectorAll('tr.mat-mdc-row'));
+    return Array.from(element.querySelectorAll('tbody tr'));
   }
 
   it('should list users sorted by username, with names and roles', async () => {
@@ -56,7 +56,7 @@ describe('UserListPage', () => {
     const { element } = await render();
 
     const deleteButtons = rows(element).map(
-      (row) => row.querySelector<HTMLButtonElement>('button[aria-label="Supprimer"]')!,
+      (row) => Array.from(row.querySelectorAll('button')).find((button) => button.textContent!.trim() === 'Supprimer')!,
     );
     expect(deleteButtons.map((button) => button.disabled)).toEqual([true, false]);
   });

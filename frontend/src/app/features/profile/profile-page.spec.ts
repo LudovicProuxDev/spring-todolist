@@ -35,7 +35,7 @@ describe('ProfilePage', () => {
   it('should show the current profile and roles', async () => {
     const { element, component } = await render();
 
-    expect(element.querySelector('mat-card-title')?.textContent).toContain('jdupont');
+    expect(element.querySelector('.card-title')?.textContent).toContain('jdupont');
     expect(element.textContent).toContain('Utilisateur');
     expect(component.form.getRawValue()).toEqual({
       firstname: 'Jean',
@@ -85,7 +85,7 @@ describe('ProfilePage', () => {
     const { element, notifier } = await render();
 
     expect(notifier.error).toHaveBeenCalledWith(error);
-    expect(element.querySelector('mat-progress-bar')).toBeNull();
+    expect(element.querySelector('.spinner-border')).toBeNull();
     expect(element.querySelector('form')).toBeNull();
   });
 });

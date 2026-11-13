@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
 import { User } from '../../core/models';
 import { UserDialog } from './user-dialog';
@@ -12,8 +12,8 @@ describe('UserDialog', () => {
     TestBed.configureTestingModule({
       imports: [UserDialog],
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: user },
-        { provide: MatDialogRef, useValue: { close } },
+        { provide: DIALOG_DATA, useValue: user },
+        { provide: DialogRef, useValue: { close } },
       ],
     });
     const fixture = TestBed.createComponent(UserDialog);

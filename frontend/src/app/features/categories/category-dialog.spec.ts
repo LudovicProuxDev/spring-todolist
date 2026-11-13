@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
 import { Category } from '../../core/models';
 import { CategoryDialog } from './category-dialog';
@@ -12,8 +12,8 @@ describe('CategoryDialog', () => {
     TestBed.configureTestingModule({
       imports: [CategoryDialog],
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: category },
-        { provide: MatDialogRef, useValue: { close } },
+        { provide: DIALOG_DATA, useValue: category },
+        { provide: DialogRef, useValue: { close } },
       ],
     });
     const fixture = TestBed.createComponent(CategoryDialog);
@@ -57,7 +57,7 @@ describe('CategoryDialog', () => {
     const dialog = create(null);
 
     dialog.form.patchValue({ color: '#f00' });
-    expect(dialog.pickerValue()).toBe('#3f51b5');
+    expect(dialog.pickerValue()).toBe('#0d6efd');
 
     dialog.form.patchValue({ color: '#FF0000' });
     expect(dialog.pickerValue()).toBe('#FF0000');

@@ -1,223 +1,61 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
-@use '@angular/material' as mat;
+// Le style vient de Bootstrap 5 (bootstrap.min.css, declare dans angular.json).
+// Ce fichier ne contient que les styles des fenetres modales et quelques
+// complements.
+@use '@angular/cdk' as cdk;
 
-html {
-  height: 100%;
-  @include mat.theme(
-    (
-      color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
-      ),
-      typography: Roboto,
-      density: 0,
-    )
-  );
+// Fenetres modales : ouvertes par le Dialog du CDK (superposition, focus,
+// touche Echap), avec le balisage .modal-content de Bootstrap a l'interieur.
+@include cdk.overlay();
+
+.cdk-overlay-dark-backdrop {
+  background: rgba(0, 0, 0, 0.5);
 }
 
-body {
-  // Suit le theme clair/sombre du systeme.
-  color-scheme: light dark;
-
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
-
-  // Reset the user agent margin.
-  margin: 0;
-  height: 100%;
+// Les classes .modal-* lisent des variables que Bootstrap declare sur .modal,
+// classe absente ici (le CDK fournit son propre conteneur) : on les redeclare
+// sur ce conteneur, avec les valeurs par defaut de Bootstrap 5.3.
+.cdk-dialog-container {
+  --bs-modal-padding: 1rem;
+  --bs-modal-color: var(--bs-body-color);
+  --bs-modal-bg: var(--bs-body-bg);
+  --bs-modal-border-color: var(--bs-border-color-translucent);
+  --bs-modal-border-width: var(--bs-border-width);
+  --bs-modal-border-radius: var(--bs-border-radius-lg);
+  --bs-modal-box-shadow: var(--bs-box-shadow-sm);
+  --bs-modal-inner-border-radius: calc(var(--bs-border-radius-lg) - (var(--bs-border-width)));
+  --bs-modal-header-padding: 1rem 1rem;
+  --bs-modal-header-border-color: var(--bs-border-color);
+  --bs-modal-header-border-width: var(--bs-border-width);
+  --bs-modal-title-line-height: 1.5;
+  --bs-modal-footer-gap: 0.5rem;
+  --bs-modal-footer-border-color: var(--bs-border-color);
+  --bs-modal-footer-border-width: var(--bs-border-width);
 }
 
-// ---------- Mise en page commune aux ecrans ----------
-
-h1 {
-  font: var(--mat-sys-headline-small);
-  margin: 0;
-}
-
-.page-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.empty,
-.muted {
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.empty {
-  padding: 32px 0;
-  text-align: center;
-}
-
-.nowrap {
-  white-space: nowrap;
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-// ---------- Formulaires ----------
-
-.form-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 8px;
-
-  mat-form-field {
-    width: 100%;
-  }
-}
-
-.form-row {
-  display: flex;
-  gap: 12px;
-
-  > * {
-    flex: 1;
-    min-width: 0;
-  }
-
-  @media (max-width: 520px) {
-    flex-direction: column;
-    gap: 4px;
-  }
-}
-
-.form-error {
-  color: var(--mat-sys-error);
-  margin: 0 0 8px;
-}
-
-.auth-card {
-  max-width: 440px;
-  margin: 48px auto 0;
-}
-
-.narrow-card {
-  max-width: 600px;
-}
-
-.auth-actions {
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.color-picker {
-  width: 32px;
-  height: 32px;
-  margin-right: 8px;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-
-// ---------- Listes et tableaux ----------
-
-.filter {
-  width: min(320px, 100%);
-  margin-bottom: 16px;
-}
-
-.table-wrapper {
-  // Sans position, les elements absolus (ex. .visually-hidden) se placeraient
-  // par rapport a la page et l'elargiraient au lieu de defiler ici.
-  position: relative;
-  overflow-x: auto;
-  border-radius: var(--mat-sys-corner-medium);
-  border: 1px solid var(--mat-sys-outline-variant);
-}
-
-.small-screen-only {
-  display: none;
-}
-
-.description {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  min-width: 200px;
-}
-
-// Petit ecran : colonnes secondaires masquees pour garder les actions visibles.
-@media (max-width: 600px) {
-  .mat-column-createdAt,
-  .mat-column-category,
-  .mat-column-name,
-  .mat-column-email,
-  .mat-column-roles {
-    display: none;
-  }
-
-  .description {
-    min-width: 0;
-  }
-
-  td.mat-mdc-cell {
-    padding-block: 10px;
-  }
-
-  .small-screen-only {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-    white-space: normal;
-
-    .swatch {
-      width: 12px;
-      height: 12px;
-    }
-  }
-}
-
-.surface-list {
-  border-radius: var(--mat-sys-corner-medium);
-  border: 1px solid var(--mat-sys-outline-variant);
-}
-
-.row-actions {
-  white-space: nowrap;
-  text-align: right;
-}
-
+// Pastille de couleur d'une categorie.
 .swatch {
   display: inline-block;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid var(--mat-sys-outline);
-  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.25rem;
+  vertical-align: middle;
 }
 
-// ---------- Boutons et notifications ----------
-
-.danger.mat-mdc-unelevated-button:not(:disabled) {
-  --mat-button-filled-container-color: var(--mat-sys-error);
-  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+// Description d'une tache : conserve les retours a la ligne saisis.
+.description {
+  white-space: pre-wrap;
 }
 
-.snack-error {
-  --mat-snack-bar-container-color: var(--mat-sys-error-container);
-  --mat-snack-bar-supporting-text-color: var(--mat-sys-on-error-container);
-  --mat-snack-bar-button-color: var(--mat-sys-on-error-container);
+// Sans position, le texte .visually-hidden (absolu) de l'en-tete "Actions"
+// se placerait par rapport a la page et l'elargirait sur petit ecran.
+.table-responsive {
+  position: relative;
+}
+
+// Dans un .input-group, le selecteur de couleur garderait sinon la largeur
+// flexible d'un champ texte.
+.input-group > .form-control-color {
+  flex: 0 0 3rem;
 }

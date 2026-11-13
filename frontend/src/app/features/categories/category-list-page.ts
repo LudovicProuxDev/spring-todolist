@@ -1,60 +1,49 @@
+import { Dialog } from '@angular/cdk/dialog';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter, switchMap } from 'rxjs';
 
 import { CategoryService } from '../../core/api/api.services';
 import { Category, CategoryRequest } from '../../core/models';
 import { Notifier } from '../../core/notifier';
 import { confirm } from '../../shared/confirm-dialog';
+import { Spinner } from '../../shared/spinner';
 import { CategoryDialog } from './category-dialog';
 
 @Component({
   selector: 'app-category-list-page',
-  imports: [MatButtonModule, MatIconModule, MatListModule, MatProgressBarModule, MatTooltipModule],
+  imports: [Spinner],
   template: `
-    <header class="page-header">
-      <h1>Catégories</h1>
-      <button mat-flat-button (click)="openDialog()">
-        <mat-icon>add</mat-icon>
-        Nouvelle catégorie
-      </button>
-    </header>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pb-2 mb-4 border-bottom">
+      <h1 class="h3 mb-0">Catégories</h1>
+      <button class="btn btn-primary" type="button" (click)="openDialog()">Nouvelle catégorie</button>
+    </div>
 
     @if (loading()) {
-      <mat-progress-bar mode="indeterminate" />
-    }
-
-    @if (!loading() && categories().length === 0) {
-      <p class="empty">Aucune catégorie pour l'instant.</p>
+      <app-spinner />
+    } @else if (categories().length === 0) {
+      <div class="alert alert-secondary">Aucune catégorie pour l'instant.</div>
     } @else {
-      <mat-list class="surface-list">
+      <ul class="list-group">
         @for (category of categories(); track category.id) {
-          <mat-list-item>
-            <span matListItemIcon class="swatch" [style.background]="category.color ?? 'transparent'"></span>
-            <span matListItemTitle>{{ category.label }}</span>
-            <span matListItemLine>{{ category.color ?? 'Sans couleur' }}</span>
-            <span matListItemMeta class="row-actions">
-              <button mat-icon-button matTooltip="Modifier" aria-label="Modifier" (click)="openDialog(category)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button matTooltip="Supprimer" aria-label="Supprimer" (click)="remove(category)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </span>
-          </mat-list-item>
+          <li class="list-group-item d-flex align-items-center gap-3">
+            <span class="swatch" [style.background]="category.color ?? 'transparent'"></span>
+            <div class="flex-grow-1">
+              <div class="category-label fw-semibold">{{ category.label }}</div>
+              <small class="text-body-secondary">{{ category.color ?? 'Sans couleur' }}</small>
+            </div>
+            <div class="text-nowrap">
+              <button class="btn btn-sm btn-outline-primary me-1" type="button" (click)="openDialog(category)">Modifier</button>
+              <button class="btn btn-sm btn-outline-danger" type="button" (click)="remove(category)">Supprimer</button>
+            </div>
+          </li>
         }
-      </mat-list>
+      </ul>
     }
   `,
 })
 export class CategoryListPage implements OnInit {
   private readonly categoryService = inject(CategoryService);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(Dialog);
   private readonly notifier = inject(Notifier);
 
   protected readonly categories = signal<Category[]>([]);
@@ -66,8 +55,8 @@ export class CategoryListPage implements OnInit {
 
   openDialog(category: Category | null = null): void {
     this.dialog
-      .open<CategoryDialog, Category | null, CategoryRequest>(CategoryDialog, { data: category, width: '440px' })
-      .afterClosed()
+      .open<CategoryRequest, Category | null>(CategoryDialog, { data: category, width: '440px', maxWidth: '95vw' })
+      .closed
       .pipe(
         filter((request): request is CategoryRequest => !!request),
         switchMap((request) =>
