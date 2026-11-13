@@ -481,11 +481,12 @@ The page tests replace the API services, `MatDialog` and the notifier with test 
 
 ## Continuous integration
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and on every pull request that targets `main`. It has three jobs:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and on every pull request that targets `main`. It has four jobs:
 
 1. **Backend - Build**: in `backend/`, sets up JDK 21 (Temurin), validates the Gradle Wrapper checksum, compiles and assembles the jar (`./gradlew build -x test`), then uploads the jar as an artifact, kept for 7 days.
 2. **Backend - Tests**: runs after the build job. It runs `./gradlew test`, which starts its own PostgreSQL container through Testcontainers (Docker is available on GitHub's Ubuntu runners), then uploads the JUnit XML reports even if tests fail.
-3. **Frontend - Tests et build**: in `frontend/`, sets up Node.js 24 with the npm cache, installs the dependencies with `npm ci`, runs the unit tests, then builds the production bundle. It runs in parallel with the backend jobs.
+3. **Frontend - Build**: in `frontend/`, sets up Node.js 24 with the npm cache, installs the dependencies with `npm ci`, builds the production bundle, then uploads it as the `frontend-dist` artifact, kept for 7 days. It runs in parallel with the backend jobs.
+4. **Frontend - Tests**: runs after the frontend build job. It installs the dependencies again and runs the unit tests (`ng test --watch=false`).
 
 The workflow only has read access to the repository (`permissions: contents: read`).
 

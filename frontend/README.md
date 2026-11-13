@@ -358,7 +358,7 @@ docker build -t spring-todolist-frontend frontend
 
 Outside Compose, nginx cannot resolve the `backend` host name, so `/api` calls fail. In `compose.yaml`, the `frontend` service waits for the backend health check, and has its own health check on `http://127.0.0.1:8080/`.
 
-In CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)), the **Frontend - Tests et build** job runs `npm ci`, the tests, then the production build, on Node.js 24.
+In CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)), on Node.js 24, the **Frontend - Build** job runs `npm ci` and the production build, and publishes `dist/frontend/browser` as the `frontend-dist` artifact. The **Frontend - Tests** job runs the unit tests once the build has succeeded.
 
 ---
 
